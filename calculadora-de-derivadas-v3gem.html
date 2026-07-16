@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deriva Pro - Panel Analítico Universitario</title>
+    
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script>
+    window.MathJax = {
+        tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']]
+        },
+        options: {
+            skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+        }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+            background-color: var(--bg-color);
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            color: var(--primary);
+        }
+        .logo-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            color: var(--text-main);
+            margin: 0;
+            letter-spacing: -0.5px;
+            font-weight: 700;
+        }
+        .logo-text span { color: var(--primary); }
+        .logo-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .contenedor { 
+            max-width: 1000px; 
+            margin: 40px auto; 
+            padding: 0 24px;
+        }
+
+        .tarjeta {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.03);
+            margin-bottom: 28px;
+            transition: transform 0.3s ease;
+        }
+        .tarjeta-controles {
+            border-top: 4px solid var(--primary);
+        }
+
+        .ejemplos-contenedor {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .chip {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-muted);
+        }
+        .chip:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        label { 
+            font-weight: 600; 
+            font-size: 13px; 
+            color: var(--text-muted);
+            margin-bottom: 8px; 
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input[type="text"], input[type="number"] { 
+            width: 100%; 
+            padding: 14px 16px; 
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-sizing: border-box; 
+            font-family: 'Inter', monospace; 
+            font-size: 16px;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+            background-color: var(--bg-color);
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+        }
+
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .botones-acciones-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 28px;
+        }
+        .btn-accion {
+            padding: 14px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Inter', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-primario {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            flex: 2 1 200px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        .btn-primario:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
+        .btn-primario:disabled { background-color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
+        
+        .btn-secundario {
+            background-color: #ffffff;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            flex: 1 1 140px;
+        }
+        .btn-secundario:hover { background-color: var(--bg-color); border-color: var(--text-muted); }
+
+        .loading-container {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .spinner {
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .fade-in-up {
+            animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .resultado-destacado {
+            padding: 24px;
+            background: var(--bg-color);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.2s;
+        }
+        .resultado-destacado h3 {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 0 0 14px 0;
+        }
+        .math-render-box {
+            font-size: 20px;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .controles-grafica {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 20px;
+            padding: 12px;
+            background: var(--bg-color);
+            border-radius: 10px;
+        }
+        .control-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            user-select: none;
+        }
+        .control-checkbox input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 24px;
+            gap: 8px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .tab-btn:hover { color: var(--text-main); }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        details.acordeon-paso {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            background: var(--bg-color);
+            transition: all 0.2s ease;
+        }
+        details.acordeon-paso[open] {
+            background: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.03);
+        }
+        summary.paso-titulo {
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            list-style: none;
+        }
+        summary.paso-titulo::-webkit-details-marker { display: none; }
+        .flecha-indicadora {
+            font-size: 11px;
+            color: var(--text-muted);
+            transition: transform 0.2s;
+        }
+        details[open] .flecha-indicadora { transform: rotate(180deg); color: var(--primary); }
+        .paso-contenido {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            line-height: 1.6;
+            font-size: 14.5px;
+            background: #ffffff;
+        }
+
+        .input-grupo-voz {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .input-grupo-voz input {
+            margin-bottom: 0;
+            flex-grow: 1;
+        }
+        .btn-voz {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 22px;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+        .btn-voz:hover {
+            background-color: #e2e8f0;
+            transform: scale(1.05);
+        }
+        .btn-voz.escuchando {
+            background-color: #fee2e2;
+            color: var(--danger);
+            border-color: var(--danger);
+            animation: pulso-microfono 1.5s infinite;
+        }
+        @keyframes pulso-microfono {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        @media print {
+            body { background: white; color: black; }
+            header, .tarjeta-controles, .botones-acciones-row, .controles-grafica, input[type="range"] {
+                display: none !important;
+            }
+            .tarjeta {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin-bottom: 40px !important;
+                page-break-inside: avoid;
+            }
+            #zona-resultados { display: block !important; }
+            .tab-content { display: block !important; margin-bottom: 30px; }
+            .tabs { display: none !important; }
+            details.acordeon-paso { border: 1px solid #ccc !important; background: white !important; margin-bottom: 15px; }
+            details.acordeon-paso .paso-contenido { display: block !important; }
+        }
+
+        @media (max-width: 600px) {
+            .grid-inputs { grid-template-columns: 1fr; gap: 16px; }
+            .tabs { overflow-x: auto; white-space: nowrap; }
+            header { padding: 16px 20px; flex-direction: column; gap: 8px; align-items: flex-start; }
+            .input-grupo-voz { flex-direction: column; align-items: stretch; }
+            .btn-voz { width: 100%; height: 44px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand-container">
+        <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 3 3 3-3 3"/>
+            <path d="M21 3h-6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/>
+            <path d="M10 18h3"/><path d="M10 14h3"/><path d="M10 10h3"/>
+        </svg>
+        <h1 class="logo-text">DERIVA<span>PRO</span></h1>
+    </div>
+    <span class="logo-sub">Proyecto de Cálculo Universitario</span>
+</header>
+
+<div class="contenedor">
+    
+    <div class="tarjeta tarjeta-controles">
+        <label>Ejemplos de Funciones Académicas:</label>
+        <div class="ejemplos-contenedor">
+            <div class="chip" onclick="setEjemplo('x^3 - 3*x^2 + 2')">Polinomio de Grado 3</div>
+            <div class="chip" onclick="setEjemplo('sin(x) + cos(x^2)')">Trigonométrica Compuesta</div>
+            <div class="chip" onclick="setEjemplo('ln(x^2 + 1)')">Logaritmo Natural</div>
+            <div class="chip" onclick="setEjemplo('x * exp(-x^2)')">Exponencial Gaussiana</div>
+            <div class="chip" onclick="setEjemplo('((x^2 - 4) * ln(x + 3)) / x')">Cociente Complejo</div>
+        </div>
+        
+        <label for="entrada_funcion">Expresión $f(x)$ (Escribe o usa el micrófono):</label>
+        <div class="input-grupo-voz">
+            <input type="text" id="entrada_funcion" placeholder="Ej: x^2 + 2*x" value="x^3 - 3*x^2 + 2">
+            <button id="btn_microfono" class="btn-voz" onclick="iniciarDictado()" title="Dictar función por voz">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+            </button>
+        </div>
+        
+        <div class="grid-inputs">
+            <div>
+                <label for="entrada_xmin">Intervalo Mínimo (X min):</label>
+                <input type="number" id="entrada_xmin" value="-5">
+            </div>
+            <div>
+                <label for="entrada_xmax">Intervalo Máximo (X max):</label>
+                <input type="number" id="entrada_xmax" value="5">
+            </div>
+        </div>
+        
+        <div class="botones-acciones-row">
+            <button id="boton_calcular" class="btn-accion btn-primario" onclick="preCalcular()" disabled>Cargando Motor...</button>
+            <button class="btn-accion btn-secundario" onclick="limpiarCalculadora()">Limpiar</button>
+            <button class="btn-accion btn-secundario" onclick="ponerEjemploAleatorio()">Ejemplo Aleatorio</button>
+            <button class="btn-accion btn-secundario" onclick="copiarDerivada()">Copiar Derivada</button>
+            <button class="btn-accion btn-secundario" onclick="window.print()">Descargar PDF</button>
+        </div>
+    </div>
+
+    <div id="loading_zone" class="loading-container">
+        <div class="spinner"></div>
+        <p style="color: var(--text-muted); font-weight: 600; font-size: 14px;">Resolviendo límites y calculando matrices gráficas...</p>
+    </div>
+
+    <div id="zona-resultados" style="display: none;">
+        
+        <div class="tarjeta">
+            <h2 style="margin-top:0; font-family:'Poppins'; font-size:18px;">Solución Analítica Definitiva</h2>
+            <div class="resultado-destacado">
+                <h3>Primera Derivada $f'(x)$</h3>
+                <div id="res_derivada1" class="math-render-box"></div>
+            </div>
+            <div class="resultado-destacado" style="border-left-color: var(--purple);">
+                <h3>Segunda Derivada $f''(x)$</h3>
+                <div id="res_derivada2" class="math-render-box"></div>
+            </div>
+        </div>
+
+        <div class="tarjeta">
+            <h2 style="margin-top:0; font-family:'Poppins'; font-size:18px;">Comportamiento Geométrico Variable</h2>
+            <div id="div_grafica" style="width:100%; height:440px;"></div>
+            
+            <div class="controles-grafica">
+                <label class="control-checkbox"><input type="checkbox" id="chk_fx" checked onchange="toggleTrace(0, this.checked)"> $f(x)$</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_dfx" checked onchange="toggleTrace(1, this.checked)"> $f'(x)$</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_tan" checked onchange="toggleTrace([2,3], this.checked)"> Recta Tangente</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_crit" checked onchange="toggleTrace(4, this.checked)"> Puntos Críticos</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_inf" checked onchange="toggleTrace(5, this.checked)"> Inflexión</label>
+            </div>
+
+            <div style="text-align: center; margin-top: 24px; padding-top: 15px; border-top: 1px solid var(--border);">
+                <strong id="valor_a" style="font-size: 14px; background: var(--bg-color); padding: 6px 12px; border-radius: 6px;">Evaluación en a = 0.0</strong><br>
+                <input type="range" id="slider_a" min="0" max="400" value="200" style="width: 85%; margin-top: 16px; accent-color: var(--primary);">
+            </div>
+        </div>
+
+        <div class="tarjeta">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="openTab(event, 'tab-pasos')">Procedimiento Formal</button>
+                <button class="tab-btn" onclick="openTab(event, 'tab-dominio')">Dominio Continuo</button>
+                <button class="tab-btn" onclick="openTab(event, 'tab-raices')">Raíces y Factorización</button>
+            </div>
+
+            <div id="tab-pasos" class="tab-content active"></div>
+
+            <div id="tab-dominio" class="tab-content"></div>
+
+            <div id="tab-raices" class="tab-content"></div>
+        </div>
+
+    </div>
+    
+</div>
+
+    <script>
+        const listaEjemplos = [
+            'x^3 - 3*x^2 + 2',
+            'sin(x) + cos(x^2)',
+            'ln(x^2 + 1)',
+            'x * exp(-x^2)',
+            '((x^2 - 4) * ln(x + 3)) / x',
+            'tan(x) - x',
+            'x^4 - 2*x^2'
+        ];
+
+        function setEjemplo(func) {
+            document.getElementById('entrada_funcion').value = func;
+        }
+
+        function ponerEjemploAleatorio() {
+            const idx = Math.floor(Math.random() * listaEjemplos.length);
+            document.getElementById('entrada_funcion').value = listaEjemplos[idx];
+            preCalcular();
+        }
+
+        function limpiarCalculadora() {
+            document.getElementById('entrada_funcion').value = '';
+            document.getElementById('zona-resultados').style.display = 'none';
+            document.getElementById('loading_zone').style.display = 'none';
+            window.ultimaDerivada = null;
+        }
+
+        function copiarDerivada() {
+            if (window.ultimaDerivada) {
+                navigator.clipboard.writeText(window.ultimaDerivada);
+                alert("Fórmula LaTeX de la primera derivada copiada al portapapeles.");
+            } else {
+                alert("No hay ningún cálculo activo para copiar.");
+            }
+        }
+
+        function openTab(evt, tabName) {
+            let i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) { tabcontent[i].classList.remove("active"); }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) { tablinks[i].classList.remove("active"); }
+            document.getElementById(tabName).classList.add("active");
+            evt.currentTarget.classList.add("active");
+        }
+
+        function toggleTrace(indices, visible) {
+            const targetIndices = Array.isArray(indices) ? indices : [indices];
+            Plotly.restyle('div_grafica', { visible: visible ? true : 'legendonly' }, targetIndices);
+        }
+
+        let plotData = null;
+
+        function renderizar_grafica(jsonData) {
+            plotData = JSON.parse(jsonData);
+            
+            let trace_f = { x: plotData.x, y: plotData.f, mode: 'lines', name: 'f(x)', line: {color: '#2563eb', width: 2.5} };
+            let trace_df = { x: plotData.x, y: plotData.df, mode: 'lines', name: "f'(x)", line: {color: '#10b981', width: 2} };
+            let trace_tan = { x: plotData.x, y: [], mode: 'lines', name: "Tangente", line: {color: '#f59e0b', width: 2, dash: 'dash'} };
+            let trace_pt = { x: [], y: [], mode: 'markers', name: "Punto a", marker: {color: '#1e293b', size: 9}, showlegend: false };
+            
+            let trace_crit = { 
+                x: plotData.crit_x, y: plotData.crit_y, 
+                mode: 'markers', name: 'Puntos Críticos', 
+                marker: {color: '#ef4444', size: 10, symbol: 'diamond'} 
+            };
+            let trace_inf = { 
+                x: plotData.inf_x, y: plotData.inf_y, 
+                mode: 'markers', name: 'Inflexión', 
+                marker: {color: '#8b5cf6', size: 10, symbol: 'square'} 
+            };
+
+            let layout = {
+                margin: { t: 10, b: 30, l: 40, r: 20 },
+                xaxis: { zeroline: true, zerolinewidth: 1.5, zerolinecolor: '#cbd5e1', gridcolor: '#f1f5f9' },
+                yaxis: { zeroline: true, zerolinewidth: 1.5, zerolinecolor: '#cbd5e1', gridcolor: '#f1f5f9' },
+                legend: { orientation: 'h', y: 1.12, x: 0 },
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)'
+            };
+
+            Plotly.newPlot('div_grafica', [trace_f, trace_df, trace_tan, trace_pt, trace_crit, trace_inf], layout, {responsive: true});
+            
+            document.getElementById("chk_fx").checked = true;
+            document.getElementById("chk_dfx").checked = true;
+            document.getElementById("chk_tan").checked = true;
+            document.getElementById("chk_crit").checked = true;
+            document.getElementById("chk_inf").checked = true;
+
+            let slider = document.getElementById("slider_a");
+            slider.oninput = function() { actualizar_tangente(this.value); };
+            actualizar_tangente(200);
+        }
+
+        function actualizar_tangente(index) {
+            if (!plotData) return;
+            let a = plotData.x[index];
+            let fa = plotData.f[index];
+            let dfa = plotData.df[index];
+            
+            let lbl = document.getElementById("valor_a");
+            
+            if (fa === null || dfa === null) {
+                lbl.innerHTML = `a = ${a.toFixed(2)} (Indefinido)`;
+                Plotly.restyle('div_grafica', {'x': [[]], 'y': [[]]}, [2, 3]);
+                return;
+            }
+            
+            lbl.innerHTML = `a = ${a.toFixed(2)} │ f(a) = ${fa.toFixed(2)} │ f'(a) = ${dfa.toFixed(2)}`;
+            let y_tan = plotData.x.map(x_val => fa + dfa * (x_val - a));
+            Plotly.restyle('div_grafica', {'x': [plotData.x, [a]], 'y': [y_tan, [fa]]}, [2, 3]);
+        }
+
+        function preCalcular() {
+            document.getElementById("zona-resultados").style.display = "none";
+            document.getElementById("loading_zone").style.display = "block";
+            document.getElementById("boton_calcular").disabled = true;
+            setTimeout(() => { document.getElementById("btn_python_trigger").click(); }, 80);
+        }
+
+        window.actualizarResultadosFormales = function(d1_latex, d2_latex, pasos_html, dominio_html, raices_html, json_grafica) {
+            window.ultimaDerivada = d1_latex;
+            
+            document.getElementById("res_derivada1").innerHTML = "\\[f'(x) = " + d1_latex + "\\]";
+            document.getElementById("res_derivada2").innerHTML = "\\[f''(x) = " + d2_latex + "\\]";
+            document.getElementById("tab-pasos").innerHTML = pasos_html;
+            document.getElementById("tab-dominio").innerHTML = dominio_html;
+            document.getElementById("tab-raices").innerHTML = raices_html;
+            
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise([
+                    document.getElementById("res_derivada1"),
+                    document.getElementById("res_derivada2"),
+                    document.getElementById("tab-pasos"),
+                    document.getElementById("tab-dominio"),
+                    document.getElementById("tab-raices")
+                ]).then(() => {
+                    renderizar_grafica(json_grafica);
+                    document.getElementById("loading_zone").style.display = "none";
+                    const zr = document.getElementById("zona-resultados");
+                    zr.style.display = "block";
+                    zr.classList.add("fade-in-up");
+                    document.getElementById("boton_calcular").disabled = false;
+                }).catch((err) => {
+                    console.error("Fallo de renderizado MathJax: ", err);
+                    renderizar_grafica(json_grafica);
+                    document.getElementById("loading_zone").style.display = "none";
+                    document.getElementById("zona-resultados").style.display = "block";
+                    document.getElementById("boton_calcular").disabled = false;
+                });
+            } else {
+                renderizar_grafica(json_grafica);
+                document.getElementById("loading_zone").style.display = "none";
+                document.getElementById("zona-resultados").style.display = "block";
+                document.getElementById("boton_calcular").disabled = false;
+            }
+        };
+
+        // MOTOR DE RECONOCIMIENTO Y TRADUCCIÓN DE VOZ MEJORADO
+        function iniciarDictado() {
+            const btn = document.getElementById('btn_microfono');
+            const input = document.getElementById('entrada_funcion');
+
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert("Tu navegador no soporta el dictado por voz nativo. Te recomendamos usar Google Chrome.");
+                return;
+            }
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            const reconocimiento = new SpeechRecognition();
+
+            reconocimiento.lang = 'es-CO';
+            reconocimiento.interimResults = false;
+            reconocimiento.maxAlternatives = 1;
+
+            reconocimiento.onstart = function() {
+                btn.classList.add('escuchando');
+                input.placeholder = "Escuchando... Habla claro";
+                input.value = "";
+            };
+
+            reconocimiento.onresult = function(event) {
+                let transcripcion = event.results[0][0].transcript.toLowerCase();
+
+                // RegEx avanzado para abarcar múltiples variaciones del lenguaje natural
+                const reemplazos = [
+                    [/al cuadrado/g, "^2"],
+                    [/al cubo/g, "^3"],
+                    [/elevado a la/g, "^"],
+                    [/a la/g, "^"],
+                    [/seno de/g, "sin("],
+                    [/seno/g, "sin("],
+                    [/coseno de/g, "cos("],
+                    [/coseno/g, "cos("],
+                    [/tangente de/g, "tan("],
+                    [/tangente/g, "tan("],
+                    [/logaritmo natural de/g, "ln("],
+                    [/logaritmo natural/g, "ln("],
+                    [/raíz cuadrada de/g, "sqrt("],
+                    [/raiz cuadrada de/g, "sqrt("],
+                    [/raíz cúbica de/g, "cbrt("],
+                    [/raiz cubica de/g, "cbrt("],
+                    [/raíz de/g, "sqrt("],
+                    [/raiz de/g, "sqrt("],
+                    [/ más /g, "+"],
+                    [/ mas /g, "+"],
+                    [/ menos /g, "-"],
+                    [/ por /g, "*"],
+                    [/ entre /g, "/"],
+                    [/ sobre /g, "/"],
+                    [/ dividido /g, "/"],
+                    [/\bequis\b/g, "x"],
+                    [/\bpi\b/g, "pi"],
+                    [/abre paréntesis/g, "("],
+                    [/abre parentesis/g, "("],
+                    [/cierra paréntesis/g, ")"],
+                    [/cierra parentesis/g, ")"]
+                ];
+
+                reemplazos.forEach(([regex, reemplazo]) => {
+                    transcripcion = transcripcion.replace(regex, reemplazo);
+                });
+
+                // Cierre automático de paréntesis para evitar errores de sintaxis
+                let parentesisAbiertos = (transcripcion.match(/\(/g) || []).length;
+                let parentesisCerrados = (transcripcion.match(/\)/g) || []).length;
+                
+                while (parentesisAbiertos > parentesisCerrados) {
+                    transcripcion += ")";
+                    parentesisCerrados++;
+                }
+
+                // Eliminación de espacios en blanco residuales que rompen los operadores
+                input.value = transcripcion.replace(/\s+/g, '').trim(); 
+                input.placeholder = "Ej: x^2 + 2*x";
+            };
+
+            reconocimiento.onerror = function(event) {
+                console.error("Error en el dictado:", event.error);
+                input.placeholder = "Ej: x^2 + 2*x";
+                btn.classList.remove('escuchando');
+            };
+
+            reconocimiento.onend = function() {
+                btn.classList.remove('escuchando');
+                input.placeholder = "Ej: x^2 + 2*x";
+            };
+
+            reconocimiento.start();
+        }
+    </script>
+
+    <button id="btn_python_trigger" style="display:none;"></button>
+    
+    <script type="py" config='{"packages":["sympy"]}'>
+        import sympy as sp
+        import json
+        from sympy.calculus.util import continuous_domain
+        from sympy.parsing.sympy_parser import parse_expr, standard_transformations, implicit_multiplication_application
+        from pyscript import document, window
+
+        btn_calc = document.getElementById("boton_calcular")
+        btn_calc.innerText = "Calcular"
+        btn_calc.disabled = False
+
+        def derivar_paso_a_paso(expr, x, pasos):
+            if not expr.has(x):
+                pasos.append(("Teorema de la Constante", f"La derivada de la componente constante $\\{sp.latex(expr)}\\$ de forma directa es $0$."))
+                return sp.Integer(0)
+            
+            if expr == x:
+                pasos.append(("Identidad de la Variable", "La derivada de la variable identidad $x$ respecto a sí misma es de valor absoluto $1$."))
+                return sp.Integer(1)
+            
+            num, den = expr.as_numer_denom()
+            if den != 1 and den.has(x):
+                pasos.append(("Regla del Cociente", f"Dada la relación de funciones $\\frac{{u}}{{v}}$, planteamos: $u = {sp.latex(num)}$ junto a $v = {sp.latex(den)}$."))
+                du = derivar_paso_a_paso(num, x, pasos)
+                dv = derivar_paso_a_paso(den, x, pasos)
+                return (du * den - num * dv) / (den**2)
+
+            if isinstance(expr, sp.Add):
+                pasos.append(("Teorema de Linealidad (Suma/Resta)", "Por propiedades lineales del operador, distribuimos y derivamos miembro a miembro de manera lineal."))
+                derivadas = [derivar_paso_a_paso(arg, x, pasos) for arg in expr.args]
+                return sp.Add(*derivadas)
+            
+            if isinstance(expr, sp.Mul):
+                coeff, strings = expr.as_coeff_Mul()
+                if coeff != 1:
+                    d_str = derivar_paso_a_paso(strings, x, pasos)
+                    return coeff * d_str
+                
+                if len(expr.args) >= 2:
+                    u, v = expr.args[0], sp.Mul(*expr.args[1:])
+                    pasos.append(("Regla del Producto", f"Dada la multiplicación operativa, definimos Factores: $u = {sp.latex(u)}$ y $v = {sp.latex(v)}$."))
+                    du, dv = derivar_paso_a_paso(u, x, pasos), derivar_paso_a_paso(v, x, pasos)
+                    return du * v + u * dv
+
+            if isinstance(expr, sp.Pow):
+                base, exp = expr.args
+                if not exp.has(x):
+                    pasos.append(("Regla de la Potencia", f"Operamos reduciendo el índice: multiplicamos por el exponente $\\{sp.latex(exp)}\\$ y restamos la unidad a la potencia."))
+                    if base != x:
+                        db = derivar_paso_a_paso(base, x, pasos)
+                        return exp * (base**(exp - 1)) * db
+                    return exp * (base**(exp - 1))
+
+            d_directa = sp.diff(expr, x)
+            pasos.append(("Derivación Directa Elemental", f"Aplicando la tabla analítica formal: $\\frac{{d}}{{dx}}({sp.latex(expr)}) = {sp.latex(d_directa)}$"))
+            return d_directa
+
+        def procesar_calculo(event):
+            try:
+                texto = document.getElementById("entrada_funcion").value.replace('^', '**')
+                xmin = float(document.getElementById("entrada_xmin").value)
+                xmax = float(document.getElementById("entrada_xmax").value)
+                
+                x = sp.symbols('x')
+                h = sp.symbols('h')
+                
+                # Integración de transformaciones para permitir multiplicación implícita (ej. 2x -> 2*x)
+                transformaciones = standard_transformations + (implicit_multiplication_application,)
+                contexto_local = {
+                    "root": lambda g, p: g**(sp.Integer(1)/p),
+                    "cbrt": lambda g: g**(sp.Integer(1)/3)
+                }
+                
+                funcion = parse_expr(texto, local_dict=contexto_local, transformations=transformaciones)
+                f_simp = sp.simplify(funcion)
+                
+                d1 = sp.diff(funcion, x)
+                d1_simp = sp.simplify(d1)
+                d2_simp = sp.simplify(sp.diff(d1, x))
+
+                d1_latex = sp.latex(d1_simp)
+                d2_latex = sp.latex(d2_simp)
+
+                lista_pasos = []
+                limite_expr = (funcion.subs(x, x + h) - funcion) / h
+                try:
+                    limite_res = sp.limit(limite_expr, h, 0)
+                except:
+                    limite_res = d1_simp
+
+                lista_pasos.append((
+                    "Definición Analítica Formal (Cociente Diferencial)", 
+                    f"Toda regla matemática opera fundamentada en el límite del cociente de diferencias racionales de Newton-Riemann: $$f'(x) = \\lim_{{h \\to 0}} \\frac{{f(x+h) - f(x)}}{{h}}$$ A partir de este principio formal, aplicando a nuestra función, evaluamos el límite analítico: $$f'(x) = \\lim_{{h \\to 0}} \\left( {sp.latex(limite_expr)} \\right) = {sp.latex(limite_res)}$$ A continuación se desglosan los teoremas algorítmicos operativos:"
+                ))
+                derivar_paso_a_paso(funcion, x, lista_pasos)
+                
+                html_pasos = ""
+                for idx, (regla, detalle) in enumerate(lista_pasos, 1):
+                    html_pasos += f'''
+                    <details class="acordeon-paso">
+                        <summary class="paso-titulo"><span>Paso {idx}: {regla}</span> <span class="flecha-indicadora">▼</span></summary>
+                        <div class="paso-contenido">{detalle}</div>
+                    </details>'''
+
+                try: dom_f = continuous_domain(f_simp, x, sp.S.Reals)
+                except: dom_f = sp.S.Reals
+                html_dominio =

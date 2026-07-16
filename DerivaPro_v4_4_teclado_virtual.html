@@ -1,0 +1,2993 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Calculadora educativa de derivadas con procedimiento, análisis de dominio y gráficas interactivas.">
+    <title>DerivaPro — Calculadora de Derivadas v4.4</title>
+
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-soft: rgba(37, 99, 235, 0.10);
+            --secondary: #0f766e;
+            --bg-color: #f4f7fb;
+            --card-bg: #ffffff;
+            --surface: #f8fafc;
+            --surface-strong: #eef2f7;
+            --text-main: #172033;
+            --text-muted: #64748b;
+            --border: #dfe7f1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+            --shadow: 0 12px 32px rgba(15, 23, 42, 0.07);
+            --shadow-soft: 0 4px 16px rgba(15, 23, 42, 0.05);
+        }
+
+        html[data-theme="dark"] {
+            --primary: #60a5fa;
+            --primary-hover: #93c5fd;
+            --primary-soft: rgba(96, 165, 250, 0.13);
+            --secondary: #2dd4bf;
+            --bg-color: #0b1220;
+            --card-bg: #111b2e;
+            --surface: #162238;
+            --surface-strong: #1d2b44;
+            --text-main: #e7eefb;
+            --text-muted: #9fb0c8;
+            --border: #273854;
+            --shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+            --shadow-soft: 0 5px 18px rgba(0, 0, 0, 0.20);
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 10% 0%, var(--primary-soft), transparent 28rem),
+                var(--bg-color);
+            -webkit-font-smoothing: antialiased;
+            transition: background-color .25s ease, color .25s ease;
+        }
+        button, input { font: inherit; }
+        button { -webkit-tap-highlight-color: transparent; }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            padding: 14px 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            background: color-mix(in srgb, var(--card-bg) 90%, transparent);
+            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+        }
+        .brand-container { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 30px; height: 30px; color: var(--primary); }
+        .logo-text {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            line-height: 1;
+            letter-spacing: -0.6px;
+        }
+        .logo-text span { color: var(--primary); }
+        .header-actions { display: flex; align-items: center; gap: 12px; }
+        .logo-sub { color: var(--text-muted); font-size: 13px; font-weight: 600; }
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 11px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: .2s ease;
+        }
+        .icon-btn:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); }
+
+        .contenedor { max-width: 1220px; margin: 34px auto 60px; padding: 0 24px; }
+        .hero { margin-bottom: 24px; }
+        .hero h2 {
+            margin: 0 0 7px;
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(25px, 4vw, 38px);
+            letter-spacing: -1.1px;
+        }
+        .hero p { margin: 0; color: var(--text-muted); line-height: 1.65; max-width: 760px; }
+
+        .workspace-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 290px;
+            gap: 24px;
+            align-items: start;
+        }
+        .tarjeta {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: var(--shadow-soft);
+            margin-bottom: 24px;
+            transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
+        }
+        .tarjeta-controles { border-top: 4px solid var(--primary); box-shadow: var(--shadow); }
+        .section-title {
+            margin: 0 0 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            letter-spacing: -.35px;
+        }
+        .section-subtitle { margin: 0 0 24px; color: var(--text-muted); font-size: 14px; line-height: 1.55; }
+
+        label.field-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .55px;
+            text-transform: uppercase;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 14px 16px;
+            color: var(--text-main);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            outline: none;
+            transition: .2s ease;
+        }
+        input[type="text"] { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 16px; }
+        input:focus {
+            background: var(--card-bg);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-soft);
+        }
+        .input-shell { position: relative; }
+        .input-shell input { padding-right: 46px; }
+        .input-clear {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .input-clear:hover { background: var(--surface-strong); color: var(--danger); }
+
+        .preview-box {
+            min-height: 76px;
+            margin-top: 12px;
+            padding: 15px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: auto;
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            background: var(--surface);
+            color: var(--text-main);
+            font-size: 18px;
+        }
+        .preview-box.error { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
+        .helper-text { min-height: 20px; margin-top: 7px; font-size: 12px; color: var(--text-muted); }
+        .helper-text.error { color: var(--danger); font-weight: 600; }
+
+        .ejemplos-contenedor { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 22px; }
+        .chip {
+            padding: 8px 13px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--surface);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: .18s ease;
+        }
+        .chip:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: translateY(-1px); }
+
+        .virtual-calculator {
+            margin-top: 16px;
+            padding: 17px;
+            overflow: hidden;
+            border: 1px solid color-mix(in srgb, var(--text-main) 20%, var(--border));
+            border-radius: 18px;
+            background:
+                linear-gradient(145deg, color-mix(in srgb, var(--surface-strong) 82%, var(--card-bg)), var(--surface));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.6), 0 10px 24px rgba(15,23,42,.08);
+        }
+        html[data-theme="dark"] .virtual-calculator { box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 12px 26px rgba(0,0,0,.24); }
+        .calculator-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+        .calculator-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .calculator-mark {
+            width: 35px;
+            height: 35px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            border-radius: 10px;
+            color: #fff;
+            background: linear-gradient(145deg, var(--primary), color-mix(in srgb, var(--primary) 68%, #111827));
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            box-shadow: 0 5px 12px color-mix(in srgb, var(--primary) 28%, transparent);
+        }
+        .calculator-brand strong { display: block; font-family: 'Poppins', sans-serif; font-size: 14px; }
+        .calculator-brand span { display: block; margin-top: 2px; color: var(--text-muted); font-size: 11px; line-height: 1.35; }
+        .keypad-toggle {
+            padding: 7px 10px;
+            flex: 0 0 auto;
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 800;
+            transition: .18s ease;
+        }
+        .keypad-toggle:hover { border-color: var(--primary); color: var(--primary); }
+        .calculator-display-hint {
+            margin-bottom: 11px;
+            padding: 9px 12px;
+            border: 1px solid color-mix(in srgb, var(--secondary) 22%, var(--border));
+            border-radius: 9px;
+            background: color-mix(in srgb, var(--secondary) 8%, var(--card-bg));
+            color: var(--text-muted);
+            font-size: 11px;
+            line-height: 1.45;
+        }
+        .calculator-display-hint strong { color: var(--secondary); }
+        .calculator-keypad {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 7px;
+            max-height: 560px;
+            opacity: 1;
+            transition: max-height .28s ease, opacity .18s ease, margin .28s ease;
+        }
+        .virtual-calculator.is-collapsed .calculator-keypad,
+        .virtual-calculator.is-collapsed .calculator-display-hint {
+            max-height: 0;
+            margin: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: hidden;
+            opacity: 0;
+            border-width: 0;
+        }
+        .calc-key {
+            min-width: 0;
+            min-height: 43px;
+            padding: 7px 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid color-mix(in srgb, var(--text-main) 17%, var(--border));
+            border-radius: 9px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            cursor: pointer;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1;
+            box-shadow: 0 3px 0 color-mix(in srgb, var(--text-main) 13%, var(--border));
+            transition: transform .08s ease, box-shadow .08s ease, border-color .16s ease, background .16s ease, color .16s ease;
+            user-select: none;
+        }
+        .calc-key:hover { border-color: var(--primary); color: var(--primary); }
+        .calc-key:active,
+        .calc-key.is-pressed { transform: translateY(2px); box-shadow: 0 1px 0 color-mix(in srgb, var(--text-main) 13%, var(--border)); }
+        .calc-key:focus-visible { outline: 3px solid var(--primary-soft); outline-offset: 2px; border-color: var(--primary); }
+        .calc-key.function {
+            background: color-mix(in srgb, var(--primary) 9%, var(--card-bg));
+            color: color-mix(in srgb, var(--primary) 88%, var(--text-main));
+        }
+        .calc-key.structure {
+            background: color-mix(in srgb, var(--purple) 9%, var(--card-bg));
+            color: color-mix(in srgb, var(--purple) 88%, var(--text-main));
+        }
+        .calc-key.operator {
+            background: color-mix(in srgb, var(--warning) 12%, var(--card-bg));
+            color: color-mix(in srgb, var(--warning) 75%, var(--text-main));
+        }
+        .calc-key.edit {
+            background: color-mix(in srgb, var(--text-muted) 11%, var(--card-bg));
+            color: var(--text-muted);
+        }
+        .calc-key.danger {
+            background: color-mix(in srgb, var(--danger) 11%, var(--card-bg));
+            color: var(--danger);
+        }
+        .calc-key.variable {
+            color: #fff;
+            background: var(--primary);
+            border-color: var(--primary);
+            box-shadow: 0 3px 0 color-mix(in srgb, var(--primary) 65%, #0f172a);
+        }
+        .calc-key small { font-size: 9px; font-weight: 700; opacity: .8; }
+        .key-wide { grid-column: span 2; }
+
+        @media (max-width: 680px) {
+            .virtual-calculator { padding: 13px; border-radius: 15px; }
+            .calculator-keypad { gap: 6px; }
+            .calc-key { min-height: 40px; font-size: 12px; border-radius: 8px; }
+            .calculator-brand span { display: none; }
+        }
+        @media (max-width: 430px) {
+            .calculator-head { align-items: flex-start; }
+            .calculator-mark { width: 32px; height: 32px; }
+            .calc-key { min-height: 38px; padding-inline: 2px; font-size: 11px; }
+        }
+
+        .grid-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 22px; }
+        .graph-auto-note {
+            margin-top: 20px;
+            padding: 14px 16px;
+            display: grid;
+            gap: 5px;
+            border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--border));
+            border-radius: 11px;
+            background: var(--primary-soft);
+            font-size: 13px;
+            line-height: 1.55;
+        }
+        .graph-auto-note strong { color: var(--primary); }
+        .graph-auto-note span { color: var(--text-muted); }
+        .graph-status {
+            min-height: 22px;
+            margin: 8px 0 2px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity .18s ease;
+        }
+        .graph-status.show { opacity: 1; }
+        .graph-status.error { color: var(--danger); }
+        .botones-acciones-row { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 25px; }
+        .btn-accion {
+            min-height: 46px;
+            padding: 12px 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 11px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: .2s cubic-bezier(.4,0,.2,1);
+        }
+        .btn-primario {
+            flex: 2 1 210px;
+            color: #fff;
+            background: var(--primary);
+            border: 1px solid var(--primary);
+            box-shadow: 0 7px 16px color-mix(in srgb, var(--primary) 25%, transparent);
+        }
+        .btn-primario:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn-primario:disabled { opacity: .62; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-secundario {
+            flex: 1 1 135px;
+            color: var(--text-main);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+        }
+        .btn-secundario:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
+
+        .history-card { position: sticky; top: 84px; padding: 22px; }
+        .history-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 14px; }
+        .history-head h3 { margin: 0; font-size: 15px; font-family: 'Poppins'; }
+        .history-clear { border: 0; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 12px; font-weight: 700; }
+        .history-clear:hover { color: var(--danger); }
+        .history-list { display: grid; gap: 9px; }
+        .history-empty { color: var(--text-muted); font-size: 13px; line-height: 1.5; padding: 12px 2px; }
+        .history-item {
+            width: 100%;
+            padding: 11px 12px;
+            text-align: left;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: .18s ease;
+        }
+        .history-item:hover { border-color: var(--primary); transform: translateX(2px); }
+        .history-func { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, monospace; font-size: 12px; font-weight: 700; }
+        .history-range { display: block; margin-top: 5px; color: var(--text-muted); font-size: 11px; }
+
+        .loading-container { display: none; text-align: center; padding: 48px 20px; }
+        .spinner {
+            width: 42px; height: 42px; margin: 0 auto 16px;
+            border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .fade-in-up { animation: fadeInUp .45s cubic-bezier(.16,1,.3,1) both; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+
+        .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 13px; }
+        .summary-card { padding: 17px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); min-width: 0; }
+        .summary-card span { display: block; margin-bottom: 7px; color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+        .summary-card strong { display: block; overflow-wrap: anywhere; font-size: 14px; line-height: 1.4; }
+
+        .results-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .resultado-destacado {
+            padding: 22px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 13px;
+            min-width: 0;
+        }
+        .resultado-destacado.purple { border-left-color: var(--purple); }
+        .resultado-destacado h3 { margin: 0 0 12px; color: var(--text-muted); font-size: 11px; letter-spacing: .5px; text-transform: uppercase; }
+        .math-render-box { overflow-x: auto; padding: 8px 0; font-size: 19px; }
+
+        .graph-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 10px; }
+        .graph-actions { display: flex; gap: 8px; }
+        .mini-btn { padding: 8px 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text-main); cursor: pointer; font-size: 12px; font-weight: 700; }
+        .mini-btn:hover { border-color: var(--primary); color: var(--primary); }
+        #div_grafica { width: 100%; height: 500px; touch-action: none; }
+        .controles-grafica { display: flex; flex-wrap: wrap; gap: 12px 18px; justify-content: center; margin-top: 14px; padding: 14px; background: var(--surface); border-radius: 11px; }
+        .control-checkbox { display: flex; align-items: center; gap: 7px; color: var(--text-main); cursor: pointer; font-size: 12px; font-weight: 700; text-transform: none; letter-spacing: 0; }
+        .control-checkbox input { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+        .slider-panel { margin-top: 20px; padding-top: 18px; text-align: center; border-top: 1px solid var(--border); }
+        #valor_a { display: inline-block; padding: 7px 12px; border-radius: 8px; background: var(--surface); font-size: 13px; }
+        input[type="range"] { width: min(88%, 760px); margin-top: 17px; accent-color: var(--primary); cursor: pointer; }
+
+        .tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 22px; border-bottom: 1px solid var(--border); scrollbar-width: thin; }
+        .tab-btn { flex: 0 0 auto; padding: 12px 16px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 13px; font-weight: 700; }
+        .tab-btn:hover { color: var(--text-main); }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { display: none; min-height: 100px; }
+        .tab-content.active { display: block; }
+        .analysis-copy { color: var(--text-main); font-size: 14px; line-height: 1.7; }
+        .analysis-list { margin: 12px 0 0; padding-left: 21px; }
+        .analysis-list li { margin-bottom: 8px; }
+
+        details.acordeon-paso { margin-bottom: 11px; overflow: hidden; border: 1px solid var(--border); border-radius: 11px; background: var(--surface); }
+        details.acordeon-paso[open] { background: var(--card-bg); border-color: var(--primary); }
+        summary.paso-titulo { padding: 15px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; cursor: pointer; list-style: none; font-size: 13px; font-weight: 700; }
+        summary.paso-titulo::-webkit-details-marker { display: none; }
+        .flecha-indicadora { color: var(--text-muted); transition: transform .2s; }
+        details[open] .flecha-indicadora { transform: rotate(180deg); color: var(--primary); }
+        .paso-contenido { padding: 18px; border-top: 1px solid var(--border); background: var(--card-bg); font-size: 14px; line-height: 1.7; }
+
+        .alert-box { padding: 15px 17px; border-radius: 11px; border: 1px solid; font-size: 13px; line-height: 1.55; }
+        .alert-error { color: color-mix(in srgb, var(--danger) 88%, var(--text-main)); background: color-mix(in srgb, var(--danger) 8%, var(--card-bg)); border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); }
+        .alert-warning { color: var(--text-main); background: color-mix(in srgb, var(--warning) 10%, var(--card-bg)); border-color: color-mix(in srgb, var(--warning) 38%, var(--border)); }
+        .toast {
+            position: fixed; right: 22px; bottom: 22px; z-index: 100;
+            max-width: min(380px, calc(100vw - 44px)); padding: 13px 16px;
+            color: #fff; background: #172033; border-radius: 11px; box-shadow: 0 12px 32px rgba(0,0,0,.24);
+            opacity: 0; transform: translateY(18px); pointer-events: none; transition: .25s ease; font-size: 13px; font-weight: 600;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.error { background: #991b1b; }
+
+        .footer-note { margin-top: 30px; text-align: center; color: var(--text-muted); font-size: 12px; }
+
+        @media (max-width: 980px) {
+            .workspace-grid { grid-template-columns: 1fr; }
+            .history-card { position: static; }
+            .history-list { grid-template-columns: repeat(2, minmax(0,1fr)); }
+            .summary-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+        }
+        @media (max-width: 680px) {
+            header { padding: 13px 18px; }
+            .logo-sub { display: none; }
+            .contenedor { margin-top: 25px; padding: 0 14px; }
+            .tarjeta { padding: 20px; border-radius: 15px; }
+            .grid-inputs, .results-layout { grid-template-columns: 1fr; }
+            .summary-grid { grid-template-columns: 1fr 1fr; }
+            .history-list { grid-template-columns: 1fr; }
+            #div_grafica { height: 420px; }
+            .graph-header { flex-direction: column; }
+        }
+        @media (max-width: 430px) {
+            .summary-grid { grid-template-columns: 1fr; }
+            .btn-accion { flex-basis: 100%; }
+            .hero h2 { font-size: 27px; }
+        }
+
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            header, .hero, .workspace-grid, .graph-actions, .controles-grafica, .slider-panel, .toast, .footer-note { display: none !important; }
+            .contenedor { max-width: none; margin: 0; padding: 0; }
+            #zona-resultados { display: block !important; }
+            .tarjeta { box-shadow: none !important; border: 0 !important; padding: 0 !important; margin-bottom: 28px !important; page-break-inside: avoid; }
+            .tabs { display: none !important; }
+            .tab-content { display: block !important; margin-bottom: 24px; }
+            details.acordeon-paso { page-break-inside: avoid; }
+            details.acordeon-paso > .paso-contenido { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="brand-container">
+        <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m3 3 3 3-3 3"/><path d="M21 3h-6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6"/><path d="M10 18h3"/><path d="M10 14h3"/><path d="M10 10h3"/>
+        </svg>
+        <h1 class="logo-text">DERIVA<span>PRO</span></h1>
+    </div>
+    <div class="header-actions">
+        <span class="logo-sub">Asistente universitario de cálculo diferencial</span>
+        <button id="theme_toggle" class="icon-btn" type="button" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+    </div>
+</header>
+
+<main class="contenedor">
+    <section class="hero">
+        <h2>Comprende la derivada, no solo el resultado.</h2>
+        <p>Ingresa una función de una variable para obtener sus derivadas, procedimiento, dominio, raíces, puntos notables y una interpretación gráfica interactiva.</p>
+    </section>
+
+    <div class="workspace-grid">
+        <section class="tarjeta tarjeta-controles" aria-labelledby="titulo-entrada">
+            <h2 id="titulo-entrada" class="section-title">Configura el análisis</h2>
+            <p class="section-subtitle">Usa <strong>x</strong> como variable, <strong>^</strong> para potencias y paréntesis para denominadores completos. Ejemplo: <strong>1/(x*exp(8))</strong>. La precedencia de operaciones se conserva tal como la escribas.</p>
+
+            <label class="field-label">Ejemplos rápidos</label>
+            <div class="ejemplos-contenedor">
+                <button class="chip" type="button" onclick="setEjemplo('x^3 - 3*x^2 + 2')">Polinomio</button>
+                <button class="chip" type="button" onclick="setEjemplo('sin(x) + cos(x^2)')">Trigonométrica</button>
+                <button class="chip" type="button" onclick="setEjemplo('ln(x^2 + 1)')">Logarítmica</button>
+                <button class="chip" type="button" onclick="setEjemplo('x * exp(-x^2)')">Exponencial</button>
+                <button class="chip" type="button" onclick="setEjemplo('((x^2 - 4) * ln(x + 3)) / x')">Cociente complejo</button>
+            </div>
+
+            <label class="field-label" for="entrada_funcion">Expresión f(x)</label>
+            <div class="input-shell">
+                <input type="text" id="entrada_funcion" value="x^3 - 3*x^2 + 2" placeholder="Ej.: sin(x) + x^2" autocomplete="off" spellcheck="false" aria-describedby="input_help">
+                <button class="input-clear" type="button" onclick="borrarFuncion()" title="Borrar función" aria-label="Borrar función">✕</button>
+            </div>
+            <div id="input_help" class="helper-text">Escribe con el teclado o usa DerivaPad. Atajo: Ctrl + Enter para calcular.</div>
+
+            <div id="virtual_calculator" class="virtual-calculator" aria-label="Teclado matemático virtual">
+                <div class="calculator-head">
+                    <div class="calculator-brand">
+                        <div class="calculator-mark" aria-hidden="true">∂</div>
+                        <div>
+                            <strong>DerivaPad</strong>
+                            <span>Construye la expresión sin abandonar el campo de entrada.</span>
+                        </div>
+                    </div>
+                    <button id="keypad_toggle" class="keypad-toggle" type="button" onclick="toggleMathKeyboard()" aria-expanded="true" aria-controls="math_keyboard">Ocultar</button>
+                </div>
+                <div class="calculator-display-hint">
+                    <strong>Inserción inteligente:</strong> coloca el cursor donde quieras escribir. Si seleccionas una expresión, las teclas como sin, √, |x| o xⁿ la envolverán automáticamente.
+                </div>
+                <div id="math_keyboard" class="calculator-keypad" role="group" aria-label="Botones para construir una función matemática">
+                    <button class="calc-key function" type="button" data-action="function" data-value="sin" aria-label="Seno">sin</button>
+                    <button class="calc-key function" type="button" data-action="function" data-value="cos" aria-label="Coseno">cos</button>
+                    <button class="calc-key function" type="button" data-action="function" data-value="tan" aria-label="Tangente">tan</button>
+                    <button class="calc-key function" type="button" data-action="function" data-value="sec" aria-label="Secante">sec</button>
+                    <button class="calc-key function" type="button" data-action="function" data-value="csc" aria-label="Cosecante">csc</button>
+                    <button class="calc-key function" type="button" data-action="function" data-value="cot" aria-label="Cotangente">cot</button>
+
+                    <button class="calc-key structure" type="button" data-action="square" aria-label="Elevar al cuadrado">x²</button>
+                    <button class="calc-key structure" type="button" data-action="power" aria-label="Potencia con exponente editable">xⁿ</button>
+                    <button class="calc-key structure" type="button" data-action="function" data-value="sqrt" aria-label="Raíz cuadrada">√x</button>
+                    <button class="calc-key structure" type="button" data-action="function" data-value="abs" aria-label="Valor absoluto">|x|</button>
+                    <button class="calc-key structure" type="button" data-action="reciprocal" aria-label="Recíproco">1/x</button>
+                    <button class="calc-key structure" type="button" data-action="function" data-value="exp" aria-label="Exponencial natural">eˣ</button>
+
+                    <button class="calc-key function" type="button" data-action="function" data-value="ln" aria-label="Logaritmo natural">ln</button>
+                    <button class="calc-key function" type="button" data-action="function" data-value="log" aria-label="Logaritmo">log</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value="pi" aria-label="Número pi">π</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value="E" aria-label="Número e">e</button>
+                    <button class="calc-key variable" type="button" data-action="raw" data-value="x" aria-label="Variable x">x</button>
+                    <button class="calc-key structure" type="button" data-action="pair" aria-label="Par de paréntesis">( )</button>
+
+                    <button class="calc-key" type="button" data-action="raw" data-value="7">7</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value="8">8</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value="9">9</button>
+                    <button class="calc-key operator" type="button" data-action="raw" data-value="/" aria-label="División">÷</button>
+                    <button class="calc-key operator" type="button" data-action="raw" data-value="*" aria-label="Multiplicación">×</button>
+                    <button class="calc-key danger" type="button" data-action="backspace" aria-label="Borrar carácter anterior">DEL</button>
+
+                    <button class="calc-key" type="button" data-action="raw" data-value="4">4</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value="5">5</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value="6">6</button>
+                    <button class="calc-key operator" type="button" data-action="raw" data-value="+" aria-label="Suma">+</button>
+                    <button class="calc-key operator" type="button" data-action="raw" data-value="-" aria-label="Resta">−</button>
+                    <button class="calc-key edit" type="button" data-action="move" data-value="-1" aria-label="Mover cursor a la izquierda">←</button>
+
+                    <button class="calc-key" type="button" data-action="raw" data-value="1">1</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value="2">2</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value="3">3</button>
+                    <button class="calc-key" type="button" data-action="raw" data-value=".">.</button>
+                    <button class="calc-key structure" type="button" data-action="raw" data-value="^" aria-label="Operador potencia">^</button>
+                    <button class="calc-key edit" type="button" data-action="move" data-value="1" aria-label="Mover cursor a la derecha">→</button>
+
+                    <button class="calc-key key-wide" type="button" data-action="raw" data-value="0">0</button>
+                    <button class="calc-key structure" type="button" data-action="raw" data-value="(" aria-label="Abrir paréntesis">(</button>
+                    <button class="calc-key structure" type="button" data-action="raw" data-value=")" aria-label="Cerrar paréntesis">)</button>
+                    <button class="calc-key structure" type="button" data-action="fraction" aria-label="Plantilla de fracción">a/b</button>
+                    <button class="calc-key danger" type="button" data-action="clear" aria-label="Borrar toda la expresión">AC</button>
+                </div>
+            </div>
+
+            <label class="field-label" style="margin-top:20px;">Vista previa matemática</label>
+            <div id="preview_funcion" class="preview-box" aria-live="polite">Cargando motor simbólico…</div>
+
+            <div class="graph-auto-note" role="note">
+                <strong>Ventana gráfica automática</strong>
+                <span>La calculadora elige la vista inicial. En la gráfica puedes arrastrar horizontalmente, usar la rueda para acercar o alejar y hacer doble clic para restablecer. El motor amplía el muestreo cuando exploras otra zona.</span>
+            </div>
+
+            <div class="botones-acciones-row">
+                <button id="boton_calcular" class="btn-accion btn-primario" type="button" onclick="preCalcular()" disabled>Inicializando motor…</button>
+                <button class="btn-accion btn-secundario" type="button" onclick="limpiarCalculadora()">Limpiar</button>
+                <button class="btn-accion btn-secundario" type="button" onclick="ponerEjemploAleatorio()">Ejemplo aleatorio</button>
+            </div>
+        </section>
+
+        <aside class="tarjeta history-card" aria-labelledby="titulo-historial">
+            <div class="history-head">
+                <h3 id="titulo-historial">Historial reciente</h3>
+                <button class="history-clear" type="button" onclick="limpiarHistorial()">Borrar</button>
+            </div>
+            <div id="history_list" class="history-list"></div>
+        </aside>
+    </div>
+
+    <div id="loading_zone" class="loading-container" aria-live="polite">
+        <div class="spinner"></div>
+        <p style="margin:0;color:var(--text-muted);font-weight:700;font-size:14px;">Analizando la función y preparando la gráfica…</p>
+    </div>
+
+    <section id="zona-resultados" style="display:none;" aria-live="polite">
+        <article class="tarjeta">
+            <h2 class="section-title">Resumen del análisis</h2>
+            <p class="section-subtitle">Información esencial de la función procesada.</p>
+            <div class="summary-grid">
+                <div class="summary-card"><span>Tipo de función</span><strong id="meta_tipo">—</strong></div>
+                <div class="summary-card"><span>Dominio</span><strong id="meta_dominio">—</strong></div>
+                <div class="summary-card"><span>Raíces visibles</span><strong id="meta_raices">—</strong></div>
+                <div class="summary-card"><span>Tiempo de cálculo</span><strong id="meta_tiempo">—</strong></div>
+            </div>
+        </article>
+
+        <article class="tarjeta">
+            <div class="graph-header">
+                <div>
+                    <h2 class="section-title">Resultados simbólicos</h2>
+                    <p class="section-subtitle" style="margin-bottom:0;">Expresiones simplificadas por el motor de álgebra simbólica.</p>
+                </div>
+                <div class="graph-actions">
+                    <button class="mini-btn" type="button" onclick="copiarDerivada()">Copiar LaTeX</button>
+                    <button class="mini-btn" type="button" onclick="imprimirInforme()">Guardar PDF</button>
+                </div>
+            </div>
+            <div class="results-layout" style="margin-top:20px;">
+                <div class="resultado-destacado">
+                    <h3>Primera derivada f'(x)</h3>
+                    <div id="res_derivada1" class="math-render-box"></div>
+                </div>
+                <div class="resultado-destacado purple">
+                    <h3>Segunda derivada f''(x)</h3>
+                    <div id="res_derivada2" class="math-render-box"></div>
+                </div>
+            </div>
+        </article>
+
+        <article class="tarjeta">
+            <div class="graph-header">
+                <div>
+                    <h2 class="section-title">Comportamiento geométrico</h2>
+                    <p class="section-subtitle" style="margin-bottom:0;">Explora con el mouse, activa capas y desplaza el punto de tangencia.</p>
+                </div>
+                <div class="graph-actions">
+                    <button class="mini-btn" type="button" onclick="restablecerVistaGrafica()">Restablecer vista</button>
+                    <button class="mini-btn" type="button" onclick="ajustarEjeY()">Ajustar eje Y</button>
+                    <button class="mini-btn" type="button" onclick="exportarGrafica()">Exportar PNG</button>
+                </div>
+            </div>
+            <div id="graph_status" class="graph-status" aria-live="polite"></div>
+            <div id="div_grafica"></div>
+            <div class="controles-grafica">
+                <label class="control-checkbox"><input type="checkbox" id="chk_fx" checked onchange="toggleTrace('f', this.checked)"> f(x)</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_dfx" checked onchange="toggleTrace('df', this.checked)"> f'(x)</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_ddfx" onchange="toggleTrace('ddf', this.checked)"> f''(x)</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_tan" checked onchange="toggleTrace('tangent', this.checked)"> Tangente</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_roots" checked onchange="toggleTrace('roots', this.checked)"> Raíces</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_ext" checked onchange="toggleTrace('extrema', this.checked)"> Extremos</label>
+                <label class="control-checkbox"><input type="checkbox" id="chk_inf" checked onchange="toggleTrace('inflections', this.checked)"> Inflexión</label>
+            </div>
+            <div class="slider-panel">
+                <strong id="valor_a">Evaluación en a = 0</strong><br>
+                <input type="range" id="slider_a" min="0" max="400" value="200" aria-label="Mover punto de tangencia">
+            </div>
+        </article>
+
+        <article class="tarjeta">
+            <div class="tabs" role="tablist">
+                <button class="tab-btn active" type="button" onclick="openTab(event, 'tab-pasos')">Procedimiento</button>
+                <button class="tab-btn" type="button" onclick="openTab(event, 'tab-dominio')">Dominio</button>
+                <button class="tab-btn" type="button" onclick="openTab(event, 'tab-raices')">Raíces</button>
+                <button class="tab-btn" type="button" onclick="openTab(event, 'tab-interpretacion')">Interpretación</button>
+            </div>
+            <div id="tab-pasos" class="tab-content active"></div>
+            <div id="tab-dominio" class="tab-content"></div>
+            <div id="tab-raices" class="tab-content"></div>
+            <div id="tab-interpretacion" class="tab-content"></div>
+        </article>
+    </section>
+
+    <p class="footer-note">DerivaPro procesa los cálculos localmente en el navegador mediante PyScript, SymPy, NumPy, MathJax y Plotly.</p>
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<button id="btn_python_trigger" type="button" hidden></button>
+<button id="btn_preview_trigger" type="button" hidden></button>
+<input id="grafica_rango_min" type="hidden" value="-13">
+<input id="grafica_rango_max" type="hidden" value="13">
+<input id="grafica_request_id" type="hidden" value="0">
+<button id="btn_graph_range_trigger" type="button" hidden></button>
+
+<script>
+    const listaEjemplos = [
+        'x^3 - 3*x^2 + 2',
+        'sin(x) + cos(x^2)',
+        'ln(x^2 + 1)',
+        'x * exp(-x^2)',
+        '((x^2 - 4) * ln(x + 3)) / x',
+        'tan(x) - x',
+        'x^4 - 2*x^2',
+        'sqrt(x + 2) / (x - 1)',
+        'sec(x) + cot(x)',
+        'x^(1/3)'
+    ];
+
+    const traceMap = {
+        f: [0], df: [1], ddf: [2], tangent: [3, 4], roots: [5], extrema: [6], inflections: [7]
+    };
+    let plotData = null;
+    let previewTimer = null;
+    let toastTimer = null;
+    let currentMetadata = null;
+    let graphRangeTimer = null;
+    let graphRangeBusy = false;
+    let pendingGraphRange = null;
+    let pendingResetView = false;
+    let graphRequestSequence = 0;
+    let currentTangentA = 0;
+    window.ultimaDerivada = null;
+    window.motorListo = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    function showToast(message, type = 'normal') {
+        const toast = $('toast');
+        toast.textContent = message;
+        toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    function setEjemplo(func) {
+        const input = $('entrada_funcion');
+        input.value = func;
+        input.focus();
+        input.setSelectionRange(func.length, func.length);
+        inputSelection = { start: func.length, end: func.length };
+        validarEntradaEnVivo();
+        solicitarVistaPrevia();
+    }
+
+    function ponerEjemploAleatorio() {
+        const actual = $('entrada_funcion').value.trim();
+        let candidato = actual;
+        while (candidato === actual && listaEjemplos.length > 1) {
+            candidato = listaEjemplos[Math.floor(Math.random() * listaEjemplos.length)];
+        }
+        setEjemplo(candidato);
+    }
+
+    function borrarFuncion() {
+        const input = $('entrada_funcion');
+        input.value = '';
+        input.focus();
+        input.setSelectionRange(0, 0);
+        inputSelection = { start: 0, end: 0 };
+        validarEntradaEnVivo();
+        solicitarVistaPrevia();
+    }
+
+    let inputSelection = { start: 0, end: 0 };
+
+    function rememberInputSelection() {
+        const input = $('entrada_funcion');
+        inputSelection = {
+            start: input.selectionStart ?? input.value.length,
+            end: input.selectionEnd ?? input.value.length
+        };
+    }
+
+    function currentInputSelection() {
+        const input = $('entrada_funcion');
+        if (document.activeElement === input) rememberInputSelection();
+        const max = input.value.length;
+        return {
+            start: Math.max(0, Math.min(inputSelection.start, max)),
+            end: Math.max(0, Math.min(inputSelection.end, max))
+        };
+    }
+
+    function replaceInputRange(replacement, cursorOffset = replacement.length, selectionLength = 0) {
+        const input = $('entrada_funcion');
+        const { start, end } = currentInputSelection();
+        input.value = input.value.slice(0, start) + replacement + input.value.slice(end);
+        const nextStart = start + cursorOffset;
+        const nextEnd = nextStart + selectionLength;
+        input.focus({ preventScroll: true });
+        input.setSelectionRange(nextStart, nextEnd);
+        inputSelection = { start: nextStart, end: nextEnd };
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function selectedInputText() {
+        const input = $('entrada_funcion');
+        const { start, end } = currentInputSelection();
+        return input.value.slice(start, end);
+    }
+
+    function insertarToken(token, cursorBack = 0) {
+        replaceInputRange(token, token.length - cursorBack);
+    }
+
+    function insertRaw(value) {
+        replaceInputRange(value);
+    }
+
+    function insertFunction(name) {
+        const selected = selectedInputText();
+        if (selected) {
+            const wrapped = `${name}(${selected})`;
+            replaceInputRange(wrapped, wrapped.length);
+        } else {
+            const template = `${name}()`;
+            replaceInputRange(template, template.length - 1);
+        }
+    }
+
+    function insertPair() {
+        const selected = selectedInputText();
+        if (selected) replaceInputRange(`(${selected})`, selected.length + 2);
+        else replaceInputRange('()', 1);
+    }
+
+    function insertSquare() {
+        const input = $('entrada_funcion');
+        const { start } = currentInputSelection();
+        const selected = selectedInputText();
+        if (selected) {
+            const wrapped = `(${selected})^2`;
+            replaceInputRange(wrapped, wrapped.length);
+            return;
+        }
+        const before = input.value.slice(0, start);
+        if (/[A-Za-z0-9_)\]]$/.test(before)) replaceInputRange('^2');
+        else replaceInputRange('x^2');
+    }
+
+    function insertPower() {
+        const input = $('entrada_funcion');
+        const { start } = currentInputSelection();
+        const selected = selectedInputText();
+        if (selected) {
+            const template = `(${selected})^()`;
+            replaceInputRange(template, template.length - 1);
+            return;
+        }
+        const before = input.value.slice(0, start);
+        const template = /[A-Za-z0-9_)\]]$/.test(before) ? '^()' : 'x^()';
+        replaceInputRange(template, template.length - 1);
+    }
+
+    function insertReciprocal() {
+        const selected = selectedInputText();
+        if (selected) {
+            const wrapped = `1/(${selected})`;
+            replaceInputRange(wrapped, wrapped.length);
+        } else {
+            replaceInputRange('1/()', 3);
+        }
+    }
+
+    function insertFraction() {
+        const selected = selectedInputText();
+        if (selected) {
+            const template = `(${selected})/()`;
+            replaceInputRange(template, template.length - 1);
+        } else {
+            replaceInputRange('()/()', 1);
+        }
+    }
+
+    function deleteAtCursor() {
+        const input = $('entrada_funcion');
+        const { start, end } = currentInputSelection();
+        if (start !== end) {
+            replaceInputRange('');
+            return;
+        }
+        if (start <= 0) return;
+        inputSelection = { start: start - 1, end: start };
+        replaceInputRange('');
+    }
+
+    function moveInputCursor(delta) {
+        const input = $('entrada_funcion');
+        const { start, end } = currentInputSelection();
+        const base = delta < 0 ? start : end;
+        const next = Math.max(0, Math.min(input.value.length, base + delta));
+        input.focus({ preventScroll: true });
+        input.setSelectionRange(next, next);
+        inputSelection = { start: next, end: next };
+    }
+
+    function clearInputFromKeypad() {
+        $('entrada_funcion').value = '';
+        inputSelection = { start: 0, end: 0 };
+        $('entrada_funcion').focus({ preventScroll: true });
+        $('entrada_funcion').setSelectionRange(0, 0);
+        $('entrada_funcion').dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function handleCalculatorKey(button) {
+        const action = button.dataset.action;
+        const value = button.dataset.value || '';
+        if (action === 'raw') insertRaw(value);
+        else if (action === 'function') insertFunction(value);
+        else if (action === 'pair') insertPair();
+        else if (action === 'square') insertSquare();
+        else if (action === 'power') insertPower();
+        else if (action === 'reciprocal') insertReciprocal();
+        else if (action === 'fraction') insertFraction();
+        else if (action === 'backspace') deleteAtCursor();
+        else if (action === 'move') moveInputCursor(Number(value));
+        else if (action === 'clear') clearInputFromKeypad();
+    }
+
+    function toggleMathKeyboard(forceOpen = null) {
+        const panel = $('virtual_calculator');
+        const toggle = $('keypad_toggle');
+        const shouldOpen = forceOpen === null ? panel.classList.contains('is-collapsed') : Boolean(forceOpen);
+        panel.classList.toggle('is-collapsed', !shouldOpen);
+        toggle.textContent = shouldOpen ? 'Ocultar' : 'Mostrar';
+        toggle.setAttribute('aria-expanded', String(shouldOpen));
+        localStorage.setItem('derivapro_teclado_abierto', shouldOpen ? '1' : '0');
+    }
+
+    function delimitadoresValidos(texto) {
+        const pares = { ')': '(', ']': '[', '}': '{' };
+        const aperturas = new Set(['(', '[', '{']);
+        const pila = [];
+        for (const char of texto) {
+            if (aperturas.has(char)) pila.push(char);
+            else if (char in pares) {
+                if (!pila.length || pila.pop() !== pares[char]) return false;
+            }
+        }
+        return pila.length === 0;
+    }
+
+    function validarFormulario() {
+        const funcion = $('entrada_funcion').value.trim();
+        if (!funcion) return { ok: false, message: 'Escribe una función antes de calcular.' };
+        if (!delimitadoresValidos(funcion)) return { ok: false, message: 'Revisa los paréntesis o corchetes: hay alguno sin cerrar o fuera de lugar.' };
+        if (/[\[\]{}]/.test(funcion)) return { ok: false, message: 'Usa solamente paréntesis ( ) para agrupar expresiones.' };
+        return { ok: true };
+    }
+
+    function validarEntradaEnVivo() {
+        const input = $('entrada_funcion');
+        const help = $('input_help');
+        const texto = input.value.trim();
+        let mensaje = 'Escribe con el teclado o usa DerivaPad. Atajo: Ctrl + Enter para calcular.';
+        let error = false;
+        if (texto && !delimitadoresValidos(texto)) {
+            mensaje = 'Hay paréntesis o corchetes desbalanceados.';
+            error = true;
+        } else if (/[\[\]{}]/.test(texto)) {
+            mensaje = 'Usa solamente paréntesis ( ) para agrupar expresiones.';
+            error = true;
+        } else if (/\^\^|\*\*\*/.test(texto)) {
+            mensaje = 'Hay una secuencia de operadores que parece inválida.';
+            error = true;
+        } else if (/\b(sin|cos|tan|sec|csc|cot|ln|exp|sqrt|abs)\(\s*\)/.test(texto)) {
+            mensaje = 'Una función tiene el argumento vacío.';
+            error = true;
+        } else if ((texto.match(/\b(?:sin|cos|tan|sec|csc|cot|exp|ln|sqrt|abs)\s*\(/g) || []).length >= 4) {
+            mensaje = 'Composición profunda detectada: el motor usará análisis protegido para evitar bloqueos.';
+        }
+        help.textContent = mensaje;
+        help.classList.toggle('error', error);
+        input.setAttribute('aria-invalid', error ? 'true' : 'false');
+        return !error;
+    }
+
+    function solicitarVistaPrevia() {
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(() => {
+            if (!window.motorListo) return;
+            $('btn_preview_trigger').click();
+        }, 280);
+    }
+
+    window.actualizarVistaPrevia = function(latex, error) {
+        const preview = $('preview_funcion');
+        if (error) {
+            preview.textContent = error;
+            preview.classList.add('error');
+            return;
+        }
+        preview.classList.remove('error');
+        preview.innerHTML = `\\[f(x)=${latex}\\]`;
+        if (window.MathJax?.typesetPromise) {
+            window.MathJax.typesetClear?.([preview]);
+            window.MathJax.typesetPromise([preview]).catch(() => {});
+        }
+    };
+
+    function limpiarCalculadora() {
+        $('entrada_funcion').value = '';
+        $('zona-resultados').style.display = 'none';
+        $('loading_zone').style.display = 'none';
+        window.ultimaDerivada = null;
+        plotData = null;
+        validarEntradaEnVivo();
+        solicitarVistaPrevia();
+        $('entrada_funcion').focus();
+    }
+
+    async function copiarDerivada() {
+        if (!window.ultimaDerivada) return showToast('Primero realiza un cálculo.', 'error');
+        try {
+            await navigator.clipboard.writeText(window.ultimaDerivada);
+            showToast('La primera derivada en LaTeX fue copiada.');
+        } catch {
+            showToast('El navegador no permitió copiar automáticamente.', 'error');
+        }
+    }
+
+    function imprimirInforme() {
+        if (!plotData) return showToast('Primero realiza un cálculo.', 'error');
+        const details = [...document.querySelectorAll('details.acordeon-paso')];
+        const estados = details.map(d => d.open);
+        details.forEach(d => d.open = true);
+        setTimeout(() => {
+            window.print();
+            details.forEach((d, i) => d.open = estados[i]);
+        }, 100);
+    }
+
+    function openTab(evt, tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        $(tabName).classList.add('active');
+        evt.currentTarget.classList.add('active');
+    }
+
+    function toggleTrace(group, visible) {
+        if (!plotData) return;
+        Plotly.restyle('div_grafica', { visible: visible ? true : 'legendonly' }, traceMap[group]);
+    }
+
+    function plotTheme() {
+        const styles = getComputedStyle(document.documentElement);
+        return {
+            text: styles.getPropertyValue('--text-main').trim(),
+            muted: styles.getPropertyValue('--text-muted').trim(),
+            grid: styles.getPropertyValue('--border').trim(),
+            surface: styles.getPropertyValue('--card-bg').trim()
+        };
+    }
+
+    function construirShapes() {
+        const shapes = [];
+        (plotData?.asym_v || []).forEach(x => shapes.push({
+            type: 'line', x0: x, x1: x, y0: 0, y1: 1, yref: 'paper',
+            line: { color: '#ef4444', width: 1.5, dash: 'dot' }
+        }));
+        (plotData?.asym_h || []).forEach(y => shapes.push({
+            type: 'line', x0: 0, x1: 1, xref: 'paper', y0: y, y1: y,
+            line: { color: '#f97316', width: 1.5, dash: 'dot' }
+        }));
+        return shapes;
+    }
+
+    function construirLayout(resetView = false) {
+        const theme = plotTheme();
+        const xaxis = {
+            title: 'x', zeroline: true, zerolinewidth: 1.4,
+            zerolinecolor: theme.muted, gridcolor: theme.grid,
+            color: theme.text, automargin: true
+        };
+        const yaxis = {
+            title: 'y', zeroline: true, zerolinewidth: 1.4,
+            zerolinecolor: theme.muted, gridcolor: theme.grid,
+            color: theme.text, automargin: true
+        };
+        if (resetView && plotData) {
+            xaxis.range = [plotData.initial_view_min, plotData.initial_view_max];
+            if (Array.isArray(plotData.y_range)) yaxis.range = plotData.y_range;
+        }
+        return {
+            margin: { t: 42, b: 46, l: 55, r: 22 },
+            xaxis,
+            yaxis,
+            legend: { orientation: 'h', y: 1.10, x: 0, font: { color: theme.text } },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { family: 'Inter, sans-serif', color: theme.text },
+            hovermode: 'closest',
+            dragmode: 'pan',
+            uirevision: plotData?.revision || 'derivapro',
+            shapes: construirShapes()
+        };
+    }
+
+    function mostrarEstadoGrafica(message = '', type = 'normal') {
+        const status = $('graph_status');
+        status.textContent = message;
+        status.className = 'graph-status' + (message ? ' show' : '') + (type === 'error' ? ' error' : '');
+    }
+
+    function rangoXActual() {
+        const range = $('div_grafica')?._fullLayout?.xaxis?.range;
+        if (!Array.isArray(range) || range.length !== 2) return null;
+        const xmin = Number(range[0]);
+        const xmax = Number(range[1]);
+        return Number.isFinite(xmin) && Number.isFinite(xmax) ? [xmin, xmax] : null;
+    }
+
+    function rangoDesdeRelayout(eventData) {
+        if (!eventData) return null;
+        if (Array.isArray(eventData['xaxis.range'])) {
+            return eventData['xaxis.range'].map(Number);
+        }
+        if ('xaxis.range[0]' in eventData && 'xaxis.range[1]' in eventData) {
+            return [Number(eventData['xaxis.range[0]']), Number(eventData['xaxis.range[1]'])];
+        }
+        return null;
+    }
+
+    function registrarExploracionGrafica() {
+        const graph = $('div_grafica');
+        if (!graph?.on) return;
+        graph.removeAllListeners?.('plotly_relayout');
+        graph.on('plotly_relayout', eventData => {
+            const range = rangoDesdeRelayout(eventData);
+            if (!range || !range.every(Number.isFinite) || range[0] >= range[1]) return;
+            programarExpansionGrafica(range[0], range[1]);
+        });
+    }
+
+    function programarExpansionGrafica(xmin, xmax) {
+        if (!plotData) return;
+        const visibleSpan = xmax - xmin;
+        const sampleSpan = plotData.sample_max - plotData.sample_min;
+        const safetyMargin = sampleSpan * 0.10;
+        const pointsInView = visibleSpan / Math.max(plotData.sample_step || 1, Number.EPSILON);
+        const nearBoundary = xmin < plotData.sample_min + safetyMargin || xmax > plotData.sample_max - safetyMargin;
+        const underResolved = pointsInView < 260;
+        if (!nearBoundary && !underResolved) return;
+
+        clearTimeout(graphRangeTimer);
+        graphRangeTimer = setTimeout(() => solicitarExpansionGrafica(xmin, xmax), 260);
+    }
+
+    function solicitarExpansionGrafica(viewMin, viewMax, forceReset = false) {
+        if (!plotData || !Number.isFinite(viewMin) || !Number.isFinite(viewMax) || viewMin >= viewMax) return;
+        const span = viewMax - viewMin;
+        if (span > 1e6) {
+            mostrarEstadoGrafica('La ventana es demasiado amplia para conservar una gráfica útil.', 'error');
+            return;
+        }
+        const buffer = Math.max(span * 0.35, 1e-6);
+        const sampleMin = viewMin - buffer;
+        const sampleMax = viewMax + buffer;
+
+        if (graphRangeBusy) {
+            pendingGraphRange = [viewMin, viewMax, forceReset];
+            return;
+        }
+
+        graphRangeBusy = true;
+        pendingResetView = forceReset;
+        graphRequestSequence += 1;
+        $('grafica_rango_min').value = String(sampleMin);
+        $('grafica_rango_max').value = String(sampleMax);
+        $('grafica_request_id').value = String(graphRequestSequence);
+        mostrarEstadoGrafica('Ampliando y refinando la gráfica…');
+        requestAnimationFrame(() => setTimeout(() => $('btn_graph_range_trigger').click(), 20));
+    }
+
+    function renderizar_grafica(jsonData) {
+        plotData = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+        const traces = [
+            { x: plotData.x, y: plotData.f, mode: 'lines', name: 'f(x)', line: { color: '#2563eb', width: 2.7 }, connectgaps: false, hovertemplate: 'x=%{x:.4g}<br>f(x)=%{y:.4g}<extra></extra>' },
+            { x: plotData.x, y: plotData.df, mode: 'lines', name: "f'(x)", line: { color: '#10b981', width: 2.2 }, connectgaps: false, hovertemplate: "x=%{x:.4g}<br>f'(x)=%{y:.4g}<extra></extra>" },
+            { x: plotData.x, y: plotData.ddf, mode: 'lines', name: "f''(x)", line: { color: '#8b5cf6', width: 1.8 }, visible: 'legendonly', connectgaps: false, hovertemplate: "x=%{x:.4g}<br>f''(x)=%{y:.4g}<extra></extra>" },
+            { x: [], y: [], mode: 'lines', name: 'Tangente', line: { color: '#f59e0b', width: 2.2, dash: 'dash' }, hoverinfo: 'skip' },
+            { x: [], y: [], mode: 'markers', name: 'Punto a', marker: { color: '#172033', size: 10, line: { color: '#fff', width: 1.5 } }, showlegend: false, hovertemplate: 'a=%{x:.4g}<br>f(a)=%{y:.4g}<extra></extra>' },
+            { x: plotData.root_x, y: plotData.root_y, mode: 'markers', name: 'Raíces', marker: { color: '#0ea5e9', size: 10, symbol: 'circle-open', line: { width: 2 } }, hovertemplate: 'Raíz: x=%{x:.4g}<extra></extra>' },
+            { x: plotData.ext_x, y: plotData.ext_y, text: plotData.ext_labels, mode: 'markers', name: 'Extremos', marker: { color: '#ef4444', size: 10, symbol: 'diamond' }, hovertemplate: '%{text}<br>x=%{x:.4g}<br>y=%{y:.4g}<extra></extra>' },
+            { x: plotData.inf_x, y: plotData.inf_y, mode: 'markers', name: 'Inflexión', marker: { color: '#a855f7', size: 10, symbol: 'square' }, hovertemplate: 'Inflexión<br>x=%{x:.4g}<br>y=%{y:.4g}<extra></extra>' }
+        ];
+        Plotly.react('div_grafica', traces, construirLayout(true), {
+            responsive: true,
+            scrollZoom: true,
+            displaylogo: false,
+            doubleClick: 'reset+autosize',
+            modeBarButtonsToRemove: ['lasso2d', 'select2d']
+        });
+
+        ['fx','dfx','tan','roots','ext','inf'].forEach(id => $(`chk_${id}`).checked = true);
+        $('chk_ddfx').checked = false;
+        const slider = $('slider_a');
+        slider.max = Math.max(0, plotData.x.length - 1);
+        slider.value = Math.floor((plotData.x.length - 1) / 2);
+        slider.oninput = () => actualizar_tangente(Number(slider.value));
+        actualizar_tangente(Number(slider.value));
+        registrarExploracionGrafica();
+        mostrarEstadoGrafica(plotData.protected_mode
+            ? 'Modo protegido activo: la gráfica usa muestreo numérico y omite análisis simbólicos costosos.'
+            : 'Arrastra la gráfica o usa la rueda del mouse para explorarla.');
+        setTimeout(() => mostrarEstadoGrafica(''), 2600);
+    }
+
+    window.actualizarRangoGrafica = function(jsonData, requestId) {
+        try {
+            const incoming = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+            if (Number(requestId) !== graphRequestSequence) return;
+            const previousA = currentTangentA;
+            plotData = { ...plotData, ...incoming };
+
+            Plotly.restyle('div_grafica', {
+                x: [plotData.x, plotData.x, plotData.x, plotData.root_x, plotData.ext_x, plotData.inf_x],
+                y: [plotData.f, plotData.df, plotData.ddf, plotData.root_y, plotData.ext_y, plotData.inf_y],
+                text: [null, null, null, null, plotData.ext_labels, null]
+            }, [0, 1, 2, 5, 6, 7]);
+            Plotly.relayout('div_grafica', {
+                shapes: construirShapes(),
+                'yaxis.range': plotData.y_range
+            });
+
+            const slider = $('slider_a');
+            slider.max = Math.max(0, plotData.x.length - 1);
+            let nearest = 0;
+            let best = Infinity;
+            plotData.x.forEach((value, index) => {
+                const distance = Math.abs(value - previousA);
+                if (distance < best) { best = distance; nearest = index; }
+            });
+            slider.value = nearest;
+            actualizar_tangente(nearest);
+            $('meta_raices').textContent = `${plotData.root_x.length} visibles`;
+
+            if (pendingResetView) {
+                pendingResetView = false;
+                Plotly.relayout('div_grafica', {
+                    'xaxis.range': [plotData.initial_view_min, plotData.initial_view_max],
+                    'yaxis.range': plotData.y_range
+                });
+            }
+            mostrarEstadoGrafica('');
+        } catch (error) {
+            mostrarEstadoGrafica('No fue posible actualizar esta zona de la gráfica.', 'error');
+        } finally {
+            graphRangeBusy = false;
+            if (pendingGraphRange) {
+                const next = pendingGraphRange;
+                pendingGraphRange = null;
+                solicitarExpansionGrafica(next[0], next[1], next[2]);
+            }
+        }
+    };
+
+    window.mostrarErrorRangoGrafica = function(message) {
+        graphRangeBusy = false;
+        mostrarEstadoGrafica(message || 'No fue posible ampliar la gráfica.', 'error');
+        if (pendingGraphRange) {
+            const next = pendingGraphRange;
+            pendingGraphRange = null;
+            solicitarExpansionGrafica(next[0], next[1], next[2]);
+        }
+    };
+
+    function actualizar_tangente(index) {
+        if (!plotData) return;
+        index = Math.max(0, Math.min(index, plotData.x.length - 1));
+        const a = plotData.x[index];
+        const fa = plotData.f[index];
+        const dfa = plotData.df[index];
+        currentTangentA = a;
+        const lbl = $('valor_a');
+        if (!Number.isFinite(fa) || !Number.isFinite(dfa)) {
+            lbl.textContent = `a = ${Number(a).toFixed(3)} · función o derivada indefinida`;
+            Plotly.restyle('div_grafica', { x: [[], []], y: [[], []] }, [3, 4]);
+            return;
+        }
+        lbl.textContent = `a = ${a.toFixed(3)}  ·  f(a) = ${fa.toFixed(3)}  ·  f'(a) = ${dfa.toFixed(3)}`;
+        const yTan = plotData.x.map(value => dfa * (value - a) + fa);
+        Plotly.restyle('div_grafica', { x: [plotData.x, [a]], y: [yTan, [fa]] }, [3, 4]);
+    }
+
+    function ajustarEjeY() {
+        if (!plotData?.y_range) return;
+        Plotly.relayout('div_grafica', { 'yaxis.range': plotData.y_range });
+    }
+
+    function restablecerVistaGrafica() {
+        if (!plotData) return;
+        const xmin = plotData.initial_view_min;
+        const xmax = plotData.initial_view_max;
+        if (xmin >= plotData.sample_min && xmax <= plotData.sample_max) {
+            Plotly.relayout('div_grafica', {
+                'xaxis.range': [xmin, xmax],
+                'yaxis.range': plotData.y_range
+            });
+        } else {
+            solicitarExpansionGrafica(xmin, xmax, true);
+        }
+    }
+
+    function exportarGrafica() {
+        if (!plotData) return showToast('Primero realiza un cálculo.', 'error');
+        Plotly.downloadImage('div_grafica', { format: 'png', filename: 'derivapro-grafica', width: 1400, height: 850, scale: 1 });
+    }
+
+    function preCalcular() {
+        const validacion = validarFormulario();
+        if (!validacion.ok) {
+            showToast(validacion.message, 'error');
+            $('input_help').textContent = validacion.message;
+            $('input_help').classList.add('error');
+            return;
+        }
+        $('zona-resultados').style.display = 'none';
+        $('loading_zone').innerHTML = '<div class="spinner"></div><p style="margin:0;color:var(--text-muted);font-weight:700;font-size:14px;">Analizando la función y preparando la gráfica…</p>';
+        $('loading_zone').style.display = 'block';
+        $('boton_calcular').disabled = true;
+        $('boton_calcular').textContent = 'Calculando…';
+        requestAnimationFrame(() => setTimeout(() => $('btn_python_trigger').click(), 30));
+    }
+
+    function finalizarEstadoCarga() {
+        $('loading_zone').style.display = 'none';
+        $('boton_calcular').disabled = false;
+        $('boton_calcular').textContent = 'Calcular análisis';
+    }
+
+    window.mostrarErrorCalculo = function(message) {
+        finalizarEstadoCarga();
+        $('loading_zone').style.display = 'block';
+        $('loading_zone').innerHTML = `<div class="alert-box alert-error"><strong>No se pudo procesar la función.</strong><br>${escapeHtml(message)}</div>`;
+        showToast('Revisa la expresión matemática.', 'error');
+    };
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    window.actualizarResultadosFormales = function(d1Latex, d2Latex, pasosHtml, dominioHtml, raicesHtml, interpretacionHtml, metadataJson, graficaJson) {
+        window.ultimaDerivada = d1Latex;
+        currentMetadata = JSON.parse(metadataJson);
+        $('res_derivada1').innerHTML = `\\[f'(x)=${d1Latex}\\]`;
+        $('res_derivada2').innerHTML = `\\[f''(x)=${d2Latex}\\]`;
+        $('tab-pasos').innerHTML = pasosHtml;
+        $('tab-dominio').innerHTML = dominioHtml;
+        $('tab-raices').innerHTML = raicesHtml;
+        $('tab-interpretacion').innerHTML = interpretacionHtml;
+        $('meta_tipo').textContent = currentMetadata.tipo;
+        $('meta_dominio').textContent = currentMetadata.dominio_texto;
+        $('meta_raices').textContent = currentMetadata.raices_texto;
+        $('meta_tiempo').textContent = `${currentMetadata.tiempo_ms} ms`;
+
+        const targets = ['res_derivada1','res_derivada2','tab-pasos','tab-dominio','tab-raices','tab-interpretacion'].map($);
+        const finish = () => {
+            renderizar_grafica(graficaJson);
+            finalizarEstadoCarga();
+            const zona = $('zona-resultados');
+            zona.style.display = 'block';
+            zona.classList.remove('fade-in-up');
+            void zona.offsetWidth;
+            zona.classList.add('fade-in-up');
+            guardarHistorial();
+            zona.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        if (window.MathJax?.typesetPromise) {
+            window.MathJax.typesetClear?.(targets);
+            window.MathJax.typesetPromise(targets).then(finish).catch(finish);
+        } else finish();
+    };
+
+    function obtenerHistorial() {
+        try { return JSON.parse(localStorage.getItem('derivapro_historial') || '[]'); }
+        catch { return []; }
+    }
+
+    function guardarHistorial() {
+        const item = {
+            funcion: $('entrada_funcion').value.trim(),
+            fecha: Date.now()
+        };
+        let historial = obtenerHistorial().filter(h => h.funcion !== item.funcion);
+        historial.unshift(item);
+        historial = historial.slice(0, 8);
+        localStorage.setItem('derivapro_historial', JSON.stringify(historial));
+        renderHistorial();
+    }
+
+    function renderHistorial() {
+        const historial = obtenerHistorial();
+        const list = $('history_list');
+        if (!historial.length) {
+            list.innerHTML = '<div class="history-empty">Tus cálculos recientes aparecerán aquí y permanecerán guardados en este navegador.</div>';
+            return;
+        }
+        list.innerHTML = historial.map((item, index) => `
+            <button class="history-item" type="button" onclick="cargarHistorial(${index})">
+                <span class="history-func">${escapeHtml(item.funcion)}</span>
+                <span class="history-range">Ventana gráfica automática</span>
+            </button>`).join('');
+    }
+
+    function cargarHistorial(index) {
+        const item = obtenerHistorial()[index];
+        if (!item) return;
+        $('entrada_funcion').value = item.funcion;
+        validarEntradaEnVivo();
+        solicitarVistaPrevia();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function limpiarHistorial() {
+        localStorage.removeItem('derivapro_historial');
+        renderHistorial();
+        showToast('Historial eliminado.');
+    }
+
+    function aplicarTema(theme) {
+        document.documentElement.dataset.theme = theme;
+        $('theme_toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+        localStorage.setItem('derivapro_tema', theme);
+        if (plotData) Plotly.relayout('div_grafica', construirLayout(false));
+    }
+
+    $('theme_toggle').addEventListener('click', () => {
+        aplicarTema(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+    });
+
+    ['focus', 'click', 'keyup', 'select'].forEach(eventName => {
+        $('entrada_funcion').addEventListener(eventName, rememberInputSelection);
+    });
+
+    $('math_keyboard').addEventListener('pointerdown', event => {
+        if (event.target.closest('.calc-key')) event.preventDefault();
+    });
+    $('math_keyboard').addEventListener('click', event => {
+        const button = event.target.closest('.calc-key');
+        if (!button) return;
+        handleCalculatorKey(button);
+        button.classList.add('is-pressed');
+        setTimeout(() => button.classList.remove('is-pressed'), 90);
+    });
+
+    $('entrada_funcion').addEventListener('input', () => {
+        rememberInputSelection();
+        validarEntradaEnVivo();
+        solicitarVistaPrevia();
+    });
+    $('entrada_funcion').addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            preCalcular();
+        }
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+        aplicarTema(localStorage.getItem('derivapro_tema') || 'light');
+        renderHistorial();
+        validarEntradaEnVivo();
+        rememberInputSelection();
+        const savedKeypadState = localStorage.getItem('derivapro_teclado_abierto');
+        toggleMathKeyboard(savedKeypadState !== '0');
+    });
+</script>
+
+<!-- Motor v4.3: modo protegido contra análisis simbólicos costosos, gráfica autoexpandible y evaluación real -->
+<script type="py" config='{"packages":["sympy", "numpy"]}'>
+import json
+import math
+import re
+import time
+import warnings
+
+import numpy as np
+import sympy as sp
+from sympy.calculus.util import continuous_domain
+from sympy.core.relational import Relational
+from sympy.calculus.singularities import singularities
+from sympy.parsing.sympy_parser import (
+    convert_xor,
+    implicit_multiplication_application,
+    parse_expr,
+    rationalize,
+    standard_transformations,
+)
+from pyscript import document, window
+
+x = sp.symbols('x', real=True)
+
+ALLOWED_LOCALS = {
+    'x': x,
+    'sin': sp.sin,
+    'cos': sp.cos,
+    'tan': sp.tan,
+    'sec': sp.sec,
+    'csc': sp.csc,
+    'cot': sp.cot,
+    'asin': sp.asin,
+    'acos': sp.acos,
+    'atan': sp.atan,
+    'arctan': sp.atan,
+    'ln': sp.log,
+    'log': sp.log,
+    'exp': sp.exp,
+    'sqrt': sp.sqrt,
+    'abs': sp.Abs,
+    'Abs': sp.Abs,
+    'sign': sp.sign,
+    'pi': sp.pi,
+    'E': sp.E,
+    'e': sp.E,
+}
+
+SAFE_GLOBALS = {
+    '__builtins__': {},
+    'Symbol': sp.Symbol,
+    'Integer': sp.Integer,
+    'Float': sp.Float,
+    'Rational': sp.Rational,
+    'Function': sp.Function,
+    'Pow': sp.Pow,
+    'factorial': sp.factorial,
+}
+
+TRANSFORMATIONS = standard_transformations + (
+    implicit_multiplication_application,
+    convert_xor,
+    rationalize,
+)
+
+FUNCTION_NAMES = (
+    'arctan', 'asin', 'acos', 'atan', 'sqrt', 'sin', 'cos', 'tan',
+    'sec', 'csc', 'cot', 'ln', 'log', 'exp', 'abs', 'Abs', 'sign'
+)
+FUNCTION_PATTERN = '|'.join(sorted(FUNCTION_NAMES, key=len, reverse=True))
+SAFE_INPUT = re.compile(r'^[0-9A-Za-z_+\-*/^().,\s×÷·π√−²³⁴]+$')
+MAX_INPUT_LENGTH = 260
+MAX_OPERATIONS = 260
+MAX_TREE_NODES = 700
+MAX_FUNCTION_DEPTH = 9
+PROTECTED_D2_OPS = 95
+PROTECTED_GRAPH_POINTS = 701
+MAX_STEPS = 34
+GRAPH_POINTS = 1001
+ROOT_SCAN_POINTS = 1201
+INITIAL_HALF_WIDTH = 10.0
+GRAPH_BUFFER_RATIO = 0.35
+MAX_DYNAMIC_SPAN = 1e6
+CURRENT_ANALYSIS = {}
+VALUE_LIMIT = 1e8
+PARSE_CACHE = {}
+LAMBDA_CACHE = {}
+CACHE_LIMIT = 24
+
+
+
+def normalize_expression_text(texto):
+    texto = texto.strip()
+    replacements = {
+        '−': '-', '×': '*', '·': '*', '÷': '/', 'π': 'pi',
+        '²': '^2', '³': '^3', '⁴': '^4',
+    }
+    for old, new in replacements.items():
+        texto = texto.replace(old, new)
+
+    texto = re.sub(r'√\s*\(', 'sqrt(', texto)
+    aliases = {
+        r'\bsen\b': 'sin',
+        r'\barcsen\b': 'asin',
+        r'\barctg\b': 'atan',
+        r'\btg\b': 'tan',
+    }
+    for pattern, replacement in aliases.items():
+        texto = re.sub(pattern, replacement, texto, flags=re.IGNORECASE)
+
+    # sinx -> sin(x), cosx -> cos(x), etc.
+    texto = re.sub(
+        rf'\b({FUNCTION_PATTERN})x\b',
+        lambda m: f'{m.group(1)}(x)',
+        texto,
+    )
+
+    # Corrige concatenaciones que el parser estándar separaría como letras:
+    # xsin(x), 2xcos(x), Esqrt(x), (x+1)ln(x).
+    texto = re.sub(
+        rf'(?<=[0-9xE\)])(?=({FUNCTION_PATTERN})\s*\()',
+        '*',
+        texto,
+    )
+    texto = re.sub(
+        rf'(?<=pi)(?=({FUNCTION_PATTERN})\s*\()',
+        '*',
+        texto,
+    )
+
+    # Evita que xpi o pix se interpreten como símbolos p e i.
+    texto = re.sub(r'(?<=[0-9xE\)])(?=pi\b)', '*', texto)
+    texto = re.sub(r'\bpi(?=[xE0-9])', 'pi*', texto)
+
+    # Convierte e como constante matemática, sin tocar notación científica 1e-3.
+    texto = re.sub(r'(?<![0-9A-Za-z_])e(?![0-9A-Za-z_])', 'E', texto)
+    return texto
+
+
+def validate_expression_text(texto):
+    if not texto:
+        raise ValueError('La función está vacía.')
+    if len(texto) > MAX_INPUT_LENGTH:
+        raise ValueError(f'La expresión es demasiado larga. Usa máximo {MAX_INPUT_LENGTH} caracteres.')
+    if '__' in texto or not SAFE_INPUT.fullmatch(texto):
+        raise ValueError('La expresión contiene caracteres no permitidos.')
+
+    # Retira temporalmente la notación científica para no confundir su e con un nombre.
+    scan_text = re.sub(r'(?<![A-Za-z_])\d+(?:\.\d+)?[eE][+-]?\d+', '1', texto)
+    names = re.findall(r'[A-Za-z_]\w*', scan_text)
+    unknown = sorted({name for name in names if name not in ALLOWED_LOCALS})
+    if unknown:
+        raise ValueError(
+            'Nombre no reconocido: ' + ', '.join(unknown) + '. '
+            'Usa solamente x y las funciones disponibles en el teclado.'
+        )
+
+
+def expression_depth(expr):
+    if not getattr(expr, 'args', None):
+        return 1
+    return 1 + max(expression_depth(arg) for arg in expr.args)
+
+
+def _cache_store(cache, key, value):
+    if len(cache) >= CACHE_LIMIT:
+        cache.pop(next(iter(cache)))
+    cache[key] = value
+    return value
+
+
+def parse_expression(texto):
+    normalized = normalize_expression_text(texto)
+    validate_expression_text(normalized)
+    if normalized in PARSE_CACHE:
+        return PARSE_CACHE[normalized]
+    try:
+        expr = parse_expr(
+            normalized,
+            local_dict=ALLOWED_LOCALS,
+            global_dict=SAFE_GLOBALS,
+            transformations=TRANSFORMATIONS,
+            evaluate=True,
+        )
+    except Exception as exc:
+        raise ValueError('Error de sintaxis en la expresión matemática.') from exc
+
+    if not isinstance(expr, sp.Expr) or isinstance(expr, (Relational, sp.MatrixBase)):
+        raise ValueError('Debes ingresar una expresión matemática de una sola variable.')
+
+    extra_symbols = expr.free_symbols - {x}
+    if extra_symbols:
+        names = ', '.join(sorted(str(s) for s in extra_symbols))
+        raise ValueError(f'Solo se permite la variable x. Símbolos no reconocidos: {names}.')
+
+    operation_count = int(sp.count_ops(expr, visual=False))
+    node_count = sum(1 for _ in sp.preorder_traversal(expr))
+    depth = expression_depth(expr)
+    function_depth = function_nesting_depth(expr)
+    if operation_count > MAX_OPERATIONS or node_count > MAX_TREE_NODES or depth > 45:
+        raise ValueError('La expresión es demasiado compleja para calcularse de forma segura en el navegador.')
+    if function_depth > MAX_FUNCTION_DEPTH:
+        raise ValueError('La composición contiene demasiadas funciones anidadas. Simplifícala o divídela en etapas.')
+    if power_tower_depth(expr) > 5:
+        raise ValueError('La torre de potencias es demasiado profunda para procesarla de forma segura.')
+
+    for power in expr.atoms(sp.Pow):
+        exponent = power.exp
+        if exponent.is_Integer and abs(int(exponent)) > 10000:
+            raise ValueError('El exponente es demasiado grande para una gráfica estable.')
+    return _cache_store(PARSE_CACHE, normalized, expr)
+
+
+def safe_float(value, limit=VALUE_LIMIT):
+    try:
+        candidate = real_numeric_expression(sp.sympify(value))
+        numeric = complex(sp.N(candidate, 16))
+        if abs(numeric.imag) > 1e-9 or not math.isfinite(numeric.real):
+            return None
+        if abs(numeric.real) > limit:
+            return None
+        return float(numeric.real)
+    except Exception:
+        return None
+
+
+
+def rational_parts(expr):
+    try:
+        if expr.is_rational_function(x):
+            return sp.fraction(sp.together(expr))
+    except Exception:
+        pass
+    return sp.fraction(expr)
+
+
+def light_simplify(expr):
+    """Limpieza dirigida que evita el coste impredecible de simplify() global."""
+    try:
+        if expr.is_rational_function(x):
+            return sp.factor_terms(sp.cancel(expr))
+        result = sp.factor_terms(expr)
+        if sp.count_ops(result) < 55:
+            result = sp.powsimp(result, force=False)
+        return result
+    except Exception:
+        return expr
+
+
+def clean_node(expr):
+    if isinstance(expr, sp.Add):
+        args = [arg for arg in expr.args if arg != 0]
+        return sp.Add(*args) if args else sp.Integer(0)
+    if isinstance(expr, sp.Mul):
+        numeric_factor = sp.Integer(1)
+        symbolic_args = []
+        for arg in expr.args:
+            if arg == 0:
+                return sp.Integer(0)
+            if arg == 1:
+                continue
+            if bool(getattr(arg, 'is_Number', False)):
+                numeric_factor *= arg
+            else:
+                symbolic_args.append(arg)
+        if numeric_factor == 0:
+            return sp.Integer(0)
+        rebuilt = []
+        if numeric_factor != 1 or not symbolic_args:
+            rebuilt.append(numeric_factor)
+        rebuilt.extend(symbolic_args)
+        return sp.Mul(*rebuilt) if rebuilt else sp.Integer(1)
+    return expr
+
+
+class StepCollector:
+    def __init__(self, max_steps=MAX_STEPS):
+        self.max_steps = max_steps
+        self.items = []
+        self.truncated = False
+
+    def add(self, title, detail):
+        if len(self.items) < self.max_steps:
+            self.items.append((title, detail))
+        else:
+            self.truncated = True
+
+
+def derivar_paso_a_paso(expr, variable, collector, depth=0):
+    if depth > 14:
+        direct = sp.diff(expr, variable)
+        collector.add(
+            'Derivación simbólica de un subbloque',
+            rf'Para conservar un procedimiento legible, derivamos este subbloque directamente: '
+            rf'$$\frac{{d}}{{dx}}\left({sp.latex(expr)}\right)={sp.latex(direct)}.$$'
+        )
+        return direct
+
+    if not expr.has(variable):
+        collector.add(
+            'Regla de la constante',
+            rf'La expresión ${sp.latex(expr)}$ no depende de $x$; por tanto, su derivada es $0$.'
+        )
+        return sp.Integer(0)
+
+    if expr == variable:
+        collector.add('Derivada de la variable', r'Como $\frac{d}{dx}(x)=1$, la derivada es $1$.')
+        return sp.Integer(1)
+
+    num, den = expr.as_numer_denom()
+    if den != 1 and den.has(variable):
+        collector.add(
+            'Regla del cociente',
+            rf'Definimos $u={sp.latex(num)}$ y $v={sp.latex(den)}$. Aplicamos '
+            r'$\left(\frac{u}{v}\right)\prime=\frac{u\prime v-u v\prime}{v^2}$.'
+        )
+        du = derivar_paso_a_paso(num, variable, collector, depth + 1)
+        dv = derivar_paso_a_paso(den, variable, collector, depth + 1)
+        result = clean_node((du * den - num * dv) / den**2)
+        collector.add(
+            'Ensamble del cociente',
+            rf'Sustituyendo: '
+            rf'$$\frac{{({sp.latex(du)})({sp.latex(den)})-({sp.latex(num)})({sp.latex(dv)})}}{{({sp.latex(den)})^2}}'
+            rf'={sp.latex(light_simplify(result))}.$$'
+        )
+        return result
+
+    if isinstance(expr, sp.Add):
+        collector.add('Linealidad de la derivada', 'Derivamos cada término por separado y conservamos sus signos.')
+        result = sp.Add(*[
+            derivar_paso_a_paso(arg, variable, collector, depth + 1)
+            for arg in expr.args
+        ])
+        return clean_node(result)
+
+    if isinstance(expr, sp.Mul):
+        coeff, rest = expr.as_coeff_Mul()
+        if coeff != 1:
+            collector.add(
+                'Factor constante',
+                rf'El factor ${sp.latex(coeff)}$ se conserva: '
+                rf'$\frac{{d}}{{dx}}\left({sp.latex(coeff)}u\right)={sp.latex(coeff)}u\prime$.'
+            )
+            return clean_node(coeff * derivar_paso_a_paso(rest, variable, collector, depth + 1))
+
+        args = list(expr.args)
+        u = args[0]
+        v = sp.Mul(*args[1:])
+        collector.add(
+            'Regla del producto',
+            rf'Tomamos $u={sp.latex(u)}$ y $v={sp.latex(v)}$. Entonces '
+            r'$(uv)\prime=u\prime v+uv\prime$.'
+        )
+        du = derivar_paso_a_paso(u, variable, collector, depth + 1)
+        dv = derivar_paso_a_paso(v, variable, collector, depth + 1)
+        result = clean_node(du * v + u * dv)
+        collector.add(
+            'Ensamble del producto',
+            rf'Obtenemos $$({sp.latex(du)})({sp.latex(v)})+'
+            rf'({sp.latex(u)})({sp.latex(dv)})={sp.latex(light_simplify(result))}.$$'
+        )
+        return result
+
+    if isinstance(expr, sp.Pow):
+        base, exponent = expr.args
+        if not exponent.has(variable):
+            collector.add(
+                'Regla de la potencia y cadena',
+                rf'Aplicamos $\frac{{d}}{{dx}}(u^n)=nu^{{n-1}}u\prime$ con '
+                rf'$u={sp.latex(base)}$ y $n={sp.latex(exponent)}$.'
+            )
+            dbase = derivar_paso_a_paso(base, variable, collector, depth + 1) if base != variable else sp.Integer(1)
+            return clean_node(exponent * base**(exponent - 1) * dbase)
+
+        # Regla general para u(x)^v(x), incluida x^x.
+        collector.add(
+            'Potencia con exponente variable',
+            rf'Para $u(x)^{{v(x)}}$ usamos derivación logarítmica: '
+            r'$\frac{d}{dx}(u^v)=u^v\left(v\prime\ln(u)+v\frac{u\prime}{u}\right)$.'
+        )
+        dbase = derivar_paso_a_paso(base, variable, collector, depth + 1)
+        dexponent = derivar_paso_a_paso(exponent, variable, collector, depth + 1)
+        return clean_node(expr * (dexponent * sp.log(base) + exponent * dbase / base))
+
+    if isinstance(expr, sp.Function):
+        arg = expr.args[0] if expr.args else variable
+        u = sp.symbols('_u', real=True)
+        try:
+            outer_derivative = sp.diff(expr.func(u), u).subs(u, arg)
+        except Exception:
+            direct = sp.diff(expr, variable)
+            collector.add(
+                'Derivación de función especial',
+                rf'Aplicamos la regla simbólica correspondiente: '
+                rf'$$\frac{{d}}{{dx}}\left({sp.latex(expr)}\right)={sp.latex(direct)}.$$'
+            )
+            return direct
+
+        collector.add(
+            'Regla de la cadena',
+            rf'La función exterior es ${sp.latex(expr.func(arg))}$ y el argumento es '
+            rf'$u={sp.latex(arg)}$. Derivamos la exterior y multiplicamos por $u\prime$.'
+        )
+        darg = derivar_paso_a_paso(arg, variable, collector, depth + 1) if arg != variable else sp.Integer(1)
+        return clean_node(outer_derivative * darg)
+
+    direct = sp.diff(expr, variable)
+    collector.add(
+        'Derivación simbólica elemental',
+        rf'Aplicando la tabla de derivadas: '
+        rf'$$\frac{{d}}{{dx}}\left({sp.latex(expr)}\right)={sp.latex(direct)}.$$'
+    )
+    return direct
+
+
+def classify_function(expr):
+    if expr.is_polynomial(x):
+        return f'Polinómica de grado {sp.degree(expr, x)}'
+
+    num, den = rational_parts(expr)
+    if num.is_polynomial(x) and den.is_polynomial(x) and den != 1:
+        return 'Racional algebraica'
+
+    families = []
+    if any(expr.has(fn) for fn in (sp.sin, sp.cos, sp.tan, sp.sec, sp.csc, sp.cot)):
+        families.append('trigonométrica')
+    if any(expr.has(fn) for fn in (sp.asin, sp.acos, sp.atan)):
+        families.append('trigonométrica inversa')
+    if expr.has(sp.log):
+        families.append('logarítmica')
+    if expr.has(sp.exp):
+        families.append('exponencial')
+    if expr.has(sp.Abs):
+        families.append('con valor absoluto')
+    if any(
+        power.exp.is_Rational and power.exp.q != 1
+        for power in expr.atoms(sp.Pow)
+    ):
+        families.append('radical')
+
+    if len(families) == 1:
+        return families[0].capitalize() + ' o compuesta'
+    if families:
+        return 'Compuesta: ' + ', '.join(families)
+    return 'Función simbólica compuesta'
+
+
+def function_nesting_depth(expr):
+    if not getattr(expr, 'args', None):
+        return 0
+    child_depth = max((function_nesting_depth(arg) for arg in expr.args), default=0)
+    return child_depth + (1 if isinstance(expr, sp.Function) else 0)
+
+
+def power_tower_depth(expr):
+    if not isinstance(expr, sp.Pow):
+        return max((power_tower_depth(arg) for arg in getattr(expr, 'args', ())), default=0)
+    return 1 + max(power_tower_depth(expr.base), power_tower_depth(expr.exp))
+
+
+def difficult_periodic_structure(expr):
+    """Detecta composiciones periódicas que disparan dominios/raíces infinitos."""
+    reciprocal_periodic = (sp.tan, sp.sec, sp.csc, sp.cot)
+    for node in sp.preorder_traversal(expr):
+        if not isinstance(node, sp.Function) or node.func not in reciprocal_periodic:
+            continue
+        argument = node.args[0]
+        if argument.has(sp.exp, sp.log) or function_nesting_depth(argument) >= 2:
+            return True
+        try:
+            if argument.is_polynomial(x) and sp.degree(argument, x) is not None and sp.degree(argument, x) > 1:
+                return True
+        except Exception:
+            return True
+        if not argument.is_polynomial(x):
+            return True
+    return False
+
+
+def analysis_profile(f_expr, d1_expr=None, d2_expr=None):
+    reasons = []
+    nesting = function_nesting_depth(f_expr)
+    periodic_hard = difficult_periodic_structure(f_expr)
+    if periodic_hard:
+        reasons.append('composición periódica con infinitas discontinuidades potenciales')
+    if nesting >= 4:
+        reasons.append('composición profunda de funciones')
+    if d2_expr is not None and sp.count_ops(d2_expr) > PROTECTED_D2_OPS:
+        reasons.append('segunda derivada de gran tamaño simbólico')
+    if power_tower_depth(f_expr) >= 4:
+        reasons.append('torre de potencias profunda')
+    return {
+        'protected': bool(reasons),
+        'periodic_hard': periodic_hard,
+        'nesting': nesting,
+        'reasons': reasons,
+    }
+
+
+def periodic_domain_conditions(expr):
+    conditions = []
+    for node in sp.preorder_traversal(expr):
+        if not isinstance(node, sp.Function):
+            continue
+        argument = node.args[0] if node.args else x
+        if node.func in (sp.tan, sp.sec):
+            conditions.append(rf'\cos\left({sp.latex(argument)}\right)\ne 0')
+        elif node.func in (sp.csc, sp.cot):
+            conditions.append(rf'\sin\left({sp.latex(argument)}\right)\ne 0')
+    unique = []
+    for item in conditions:
+        if item not in unique:
+            unique.append(item)
+    return unique[:5]
+
+
+def format_set_for_metadata(domain_set, max_len=88):
+    text = str(domain_set)
+    return text if len(text) <= max_len else text[:max_len - 1] + '…'
+
+
+def safe_continuous_domain(expr, protected=False):
+    # SymPy puede tardar minutos al expandir dominios periódicos anidados.
+    if protected or difficult_periodic_structure(expr) or sp.count_ops(expr) > 90:
+        return sp.S.Reals, False
+    try:
+        return continuous_domain(expr, x, sp.S.Reals), True
+    except Exception:
+        return sp.S.Reals, False
+
+
+def finite_domain_boundaries(domain_set):
+    values = []
+    try:
+        for node in sp.preorder_traversal(domain_set):
+            if not isinstance(node, sp.Interval):
+                continue
+            for endpoint in (node.start, node.end):
+                value = safe_float(endpoint)
+                if value is not None:
+                    values.append(value)
+    except Exception:
+        pass
+    return deduplicate_numbers(values, max_items=12)
+
+
+def automatic_initial_window(expr, domain_set, profile=None):
+    profile = profile or {'protected': False, 'periodic_hard': False}
+    if profile.get('periodic_hard'):
+        # Una ventana amplia contendría miles de oscilaciones no representables.
+        return -1.1, 1.1
+
+    candidates = finite_domain_boundaries(domain_set)
+    if not profile.get('protected') and sp.count_ops(expr) <= 38:
+        try:
+            singular_set = singularities(expr, x)
+            if isinstance(singular_set, sp.FiniteSet):
+                for item in singular_set:
+                    value = safe_float(item)
+                    if value is not None:
+                        candidates.append(value)
+        except Exception:
+            pass
+
+    if expr.is_polynomial(x):
+        try:
+            degree = sp.degree(expr, x)
+            if degree is not None and 1 <= degree <= 4:
+                for solution in sp.solve(expr, x):
+                    value = safe_float(solution)
+                    if value is not None:
+                        candidates.append(value)
+        except Exception:
+            pass
+
+    candidates = deduplicate_numbers(candidates, max_items=16)
+    if not candidates:
+        return -INITIAL_HALF_WIDTH, INITIAL_HALF_WIDTH
+
+    center = float(np.median(np.asarray(candidates, dtype=float)))
+    spread = max(candidates) - min(candidates) if len(candidates) > 1 else 0.0
+    half_width = max(INITIAL_HALF_WIDTH, spread * 0.75 + 2.0)
+    half_width = min(half_width, 5000.0)
+    return center - half_width, center + half_width
+
+
+def build_domain_html(f_original, d1, d2, profile=None):
+    profile = profile or {'protected': False, 'reasons': []}
+    protected = bool(profile.get('protected'))
+
+    if protected:
+        conditions = periodic_domain_conditions(f_original)
+        condition_html = (
+            '<p><strong>Restricciones periódicas detectadas:</strong> $$'
+            + r'\qquad '.join(conditions)
+            + '$$</p>'
+            if conditions else ''
+        )
+        reasons = ', '.join(profile.get('reasons') or ['estructura simbólica costosa'])
+        html = f'''
+        <div class="analysis-copy">
+            <div class="alert-box alert-warning">
+                <strong>Modo protegido activado.</strong> Se omitió la expansión exacta del dominio porque esta expresión contiene {reasons}. Ese cálculo puede generar conjuntos periódicos enormes y bloquear el navegador.
+            </div>
+            {condition_html}
+            <p>La gráfica evalúa directamente la función real y conserva como cortes los puntos no finitos. El dominio de las derivadas se considera únicamente donde la función y cada derivada evaluada sean finitas.</p>
+            <p class="helper-text">Esta decisión no modifica la derivada; solamente evita una búsqueda simbólica potencialmente interminable.</p>
+        </div>'''
+        return sp.S.Reals, sp.S.Reals, sp.S.Reals, sp.S.Reals, html
+
+    dom_f, exact_f = safe_continuous_domain(f_original)
+    dom_d1, exact_d1 = safe_continuous_domain(d1)
+    dom_d2, exact_d2 = safe_continuous_domain(d2)
+    domains_equal = dom_f == dom_d1 and dom_f == dom_d2
+    has_periodic_sets = any(bool(domain.atoms(sp.ImageSet)) for domain in (dom_f, dom_d1, dom_d2))
+    if domains_equal:
+        common = dom_f
+    elif has_periodic_sets:
+        common = sp.Intersection(dom_f, dom_d1, dom_d2, evaluate=False)
+    else:
+        try:
+            common = sp.Intersection(dom_f, dom_d1, dom_d2)
+        except Exception:
+            common = sp.Intersection(dom_f, dom_d1, dom_d2, evaluate=False)
+
+    estimation_note = ''
+    if not all((exact_f, exact_d1, exact_d2)):
+        estimation_note = (
+            '<p class="helper-text">En expresiones complejas, el motor evita análisis simbólicos costosos; '
+            'el dominio mostrado puede ser una aproximación conservadora.</p>'
+        )
+
+    html = rf'''
+    <div class="analysis-copy">
+        <p><strong>Dominio de la función original:</strong> $$D_f={sp.latex(dom_f)}$$</p>
+        <p><strong>Dominio de la primera derivada:</strong> $$D_{{f\prime}}={sp.latex(dom_d1)}$$</p>
+        <p><strong>Dominio de la segunda derivada:</strong> $$D_{{f\prime\prime}}={sp.latex(dom_d2)}$$</p>
+        <p><strong>Dominio común para el análisis:</strong> $$D_{{\mathrm{{común}}}}={sp.latex(common)}$$</p>
+        <div class="alert-box" style="color:var(--text-main);background:color-mix(in srgb,var(--primary) 8%,var(--card-bg));border-color:color-mix(in srgb,var(--primary) 30%,var(--border));">
+            El dominio matemático no depende de la ventana gráfica. Puedes desplazarte y ampliar la gráfica sin modificar la función ingresada.
+        </div>
+        {estimation_note}
+    </div>'''
+    return dom_f, dom_d1, dom_d2, common, html
+
+
+def real_numeric_expression(expr):
+    """Convierte potencias racionales de denominador impar a su rama real.
+
+    Una entrada decimal finita como 2.4 se racionaliza a 12/5. En cálculo
+    real, x^(12/5) está definida también para x<0 y equivale a |x|^(12/5).
+    Esta conversión solo se usa para evaluación numérica; la expresión
+    simbólica y su derivada conservan la notación matemática original.
+    """
+    replacements = {}
+    for power in expr.atoms(sp.Pow):
+        exponent = power.exp
+        if not (exponent.is_Rational and exponent.q > 1 and exponent.q % 2 == 1):
+            continue
+        numerator = int(exponent.p)
+        base = power.base
+        magnitude = sp.Abs(base) ** exponent
+        if abs(numerator) % 2 == 1:
+            replacement = sp.sign(base) * magnitude
+        else:
+            replacement = magnitude
+        replacements[power] = replacement
+    return expr.xreplace(replacements) if replacements else expr
+
+
+def make_numpy_function(expr):
+    numeric_expr = real_numeric_expression(expr)
+    key = 'real:' + sp.srepr(numeric_expr)
+    if key in LAMBDA_CACHE:
+        return LAMBDA_CACHE[key]
+    custom = {
+        'DiracDelta': lambda value, *args: np.where(np.isclose(value, 0.0, atol=1e-12), np.nan, 0.0),
+        'Heaviside': lambda value, h0=0.5: np.heaviside(value, h0),
+    }
+    func = sp.lambdify(x, numeric_expr, modules=[custom, 'numpy'])
+    return _cache_store(LAMBDA_CACHE, key, func)
+
+
+def evaluate_vector(expr, x_values):
+    try:
+        func = make_numpy_function(expr)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            with np.errstate(all='ignore'):
+                raw = func(x_values)
+        arr = np.asarray(raw)
+        if arr.ndim == 0:
+            arr = np.full(x_values.shape, arr.item())
+        else:
+            arr = np.broadcast_to(arr, x_values.shape)
+
+        if np.iscomplexobj(arr):
+            imag = np.abs(np.imag(arr))
+            real = np.real(arr).astype(float)
+            real[imag > 1e-9] = np.nan
+            arr = real
+        else:
+            arr = arr.astype(float)
+
+        arr = np.array(arr, dtype=float, copy=True)
+        arr[~np.isfinite(arr)] = np.nan
+        arr[np.abs(arr) > VALUE_LIMIT] = np.nan
+        return arr
+    except Exception:
+        return np.full(x_values.shape, np.nan, dtype=float)
+
+
+def scalar_evaluator(expr):
+    try:
+        func = make_numpy_function(expr)
+    except Exception:
+        return lambda value: None
+
+    def evaluate(value):
+        try:
+            with np.errstate(all='ignore'):
+                result = func(float(value))
+            array = np.asarray(result)
+            if array.size != 1:
+                return None
+            numeric = complex(array.reshape(-1)[0])
+            if abs(numeric.imag) > 1e-8 or not math.isfinite(numeric.real):
+                return None
+            if abs(numeric.real) > VALUE_LIMIT:
+                return None
+            return float(numeric.real)
+        except Exception:
+            return None
+    return evaluate
+
+
+def deduplicate_solution_records(records, tolerance=1e-7, max_items=30):
+    valid = [record for record in records if record.get('num') is not None and math.isfinite(record['num'])]
+    valid.sort(key=lambda record: record['num'])
+    unique = []
+    for record in valid:
+        if not unique or abs(record['num'] - unique[-1]['num']) > tolerance * max(1.0, abs(record['num'])):
+            unique.append(record)
+        elif record.get('exact') and not unique[-1].get('exact'):
+            unique[-1] = record
+    return unique[:max_items]
+
+
+def polynomial_solution_records(expr, xmin, xmax, max_items=30):
+    num, den = rational_parts(expr)
+    try:
+        poly = sp.Poly(num, x)
+    except Exception:
+        return None
+
+    if poly.is_zero:
+        return 'infinite'
+    degree = poly.degree()
+    if degree <= 0:
+        return []
+
+    records = []
+    if degree <= 4:
+        try:
+            for solution in sp.solve(poly.as_expr(), x):
+                value = safe_float(solution)
+                if value is None or not (xmin - 1e-9 <= value <= xmax + 1e-9):
+                    continue
+                den_value = safe_float(den.subs(x, solution))
+                if den_value is None or abs(den_value) < 1e-9:
+                    continue
+                records.append({'sym': solution, 'num': value, 'exact': True})
+        except Exception:
+            pass
+    else:
+        try:
+            for solution in poly.nroots(maxsteps=70):
+                value_complex = complex(solution)
+                if abs(value_complex.imag) > 1e-9:
+                    continue
+                value = float(value_complex.real)
+                if xmin - 1e-9 <= value <= xmax + 1e-9:
+                    den_value = scalar_evaluator(den)(value)
+                    if den_value is not None and abs(den_value) > 1e-8:
+                        records.append({'sym': None, 'num': value, 'exact': False})
+        except Exception:
+            pass
+    return deduplicate_solution_records(records, max_items=max_items)
+
+
+def bisect_numeric(func, left, right, f_left, f_right, iterations=60):
+    if f_left is None or f_right is None or f_left * f_right > 0:
+        return None
+    if abs(f_left) < 1e-12:
+        return left
+    if abs(f_right) < 1e-12:
+        return right
+
+    a, b, fa, fb = left, right, f_left, f_right
+    for _ in range(iterations):
+        mid = (a + b) / 2.0
+        fm = func(mid)
+        if fm is None:
+            # Una discontinuidad dentro del bracket no debe convertirse en raíz.
+            return None
+        if abs(fm) < 1e-11 or abs(b - a) < 1e-11:
+            return mid
+        if fa * fm <= 0:
+            b, fb = mid, fm
+        else:
+            a, fa = mid, fm
+    return (a + b) / 2.0
+
+
+def numeric_solution_records(expr, xmin, xmax, max_items=30, allow_nsolve=True):
+    if not expr.has(x):
+        return 'infinite' if expr == 0 else []
+
+    sample_x = np.linspace(xmin, xmax, ROOT_SCAN_POINTS)
+    sample_y = evaluate_vector(expr, sample_x)
+    finite = np.isfinite(sample_y)
+    if not finite.any():
+        return []
+
+    func = scalar_evaluator(expr)
+    records = []
+    finite_abs = np.abs(sample_y[finite])
+    median_abs = float(np.median(finite_abs)) if finite_abs.size else 1.0
+    # Solo aceptamos como raíz directa un cero numérico prácticamente exacto.
+    # Los mínimos cercanos a cero se refinan más abajo con nsolve.
+    for idx in np.where(finite & (np.abs(sample_y) <= 1e-10))[0]:
+        records.append({'sym': None, 'num': float(sample_x[idx]), 'exact': False})
+
+    # Cambios de signo: bisección rápida y validación del residuo.
+    sign_candidates = []
+    for idx in range(len(sample_x) - 1):
+        y0, y1 = sample_y[idx], sample_y[idx + 1]
+        if not (math.isfinite(y0) and math.isfinite(y1)) or y0 * y1 >= 0:
+            continue
+        # Evita confundir saltos verticales con raíces.
+        if min(abs(y0), abs(y1)) > max(30.0, 20.0 * median_abs):
+            continue
+        sign_candidates.append(idx)
+
+    for idx in sign_candidates[:max_items * 3]:
+        root = bisect_numeric(
+            func,
+            float(sample_x[idx]),
+            float(sample_x[idx + 1]),
+            float(sample_y[idx]),
+            float(sample_y[idx + 1]),
+        )
+        if root is None:
+            continue
+        residual = func(root)
+        if residual is not None and abs(residual) < 1e-6:
+            records.append({'sym': None, 'num': root, 'exact': False})
+
+    # Raíces tangenciales (multiplicidad par) que no cambian de signo.
+    tangent_candidates = []
+    for idx in range(1, len(sample_x) - 1):
+        if not (finite[idx - 1] and finite[idx] and finite[idx + 1]):
+            continue
+        current = abs(sample_y[idx])
+        if current <= abs(sample_y[idx - 1]) and current <= abs(sample_y[idx + 1]):
+            if current <= max(1e-4, median_abs * 2e-3):
+                tangent_candidates.append(float(sample_x[idx]))
+
+    if not allow_nsolve:
+        return deduplicate_solution_records(records, tolerance=2e-6, max_items=max_items)
+
+    for seed in tangent_candidates[:min(14, max_items * 2)]:
+        try:
+            solution = sp.nsolve(expr, x, seed, tol=1e-13, maxsteps=35, verify=False, prec=24)
+            value = safe_float(solution)
+            if value is None or not (xmin - 1e-8 <= value <= xmax + 1e-8):
+                continue
+            residual = func(value)
+            if residual is not None and abs(residual) < 1e-6:
+                records.append({'sym': None, 'num': value, 'exact': False})
+        except Exception:
+            continue
+
+    return deduplicate_solution_records(records, tolerance=2e-6, max_items=max_items)
+
+
+def find_real_solutions(expr, xmin, xmax, max_items=30, protected=False):
+    polynomial_records = polynomial_solution_records(expr, xmin, xmax, max_items=max_items)
+    if polynomial_records == 'infinite':
+        return 'infinite'
+    if polynomial_records is not None:
+        return polynomial_records
+    return numeric_solution_records(expr, xmin, xmax, max_items=max_items, allow_nsolve=not protected)
+
+
+def records_to_latex(records):
+    if records == 'infinite':
+        return r'\text{Todos los puntos del dominio son solución.}'
+    if not records:
+        return r'\text{No se detectaron raíces reales en la ventana analizada.}'
+
+    pieces = []
+    for record in records:
+        if record.get('exact') and record.get('sym') is not None:
+            pieces.append(rf'x={sp.latex(record["sym"])}')
+        else:
+            pieces.append(rf'x\approx {record["num"]:.8g}')
+    return r',\quad '.join(pieces)
+
+
+def classify_critical_point(point, f_eval, d1_eval, d2_eval, xmin, xmax):
+    delta = max((xmax - xmin) * 1e-4, 1e-6)
+    left = d1_eval(max(xmin, point - delta))
+    right = d1_eval(min(xmax, point + delta))
+    if left is not None and right is not None:
+        if left < 0 < right:
+            return 'Mínimo local'
+        if left > 0 > right:
+            return 'Máximo local'
+
+    second = d2_eval(point)
+    if second is not None and second > 1e-7:
+        return 'Mínimo local'
+    if second is not None and second < -1e-7:
+        return 'Máximo local'
+    return 'Punto crítico no concluyente'
+
+
+def confirms_inflection(point, d2_eval, xmin, xmax):
+    delta = max((xmax - xmin) * 2e-4, 2e-6)
+    left = d2_eval(max(xmin, point - delta))
+    right = d2_eval(min(xmax, point + delta))
+    return left is not None and right is not None and left * right < 0
+
+
+def finite_singularities_in_range(expr, xmin, xmax, protected=False):
+    values = []
+    if protected or difficult_periodic_structure(expr) or sp.count_ops(expr) > 45:
+        return values
+    try:
+        singular_set = singularities(expr, x)
+        if isinstance(singular_set, sp.FiniteSet):
+            for singularity in singular_set:
+                value = safe_float(singularity)
+                if value is not None and xmin <= value <= xmax:
+                    values.append(value)
+    except Exception:
+        pass
+    return deduplicate_numbers(values)
+
+
+def mask_near_points(x_values, arrays, points):
+    for point in points:
+        index = int(np.argmin(np.abs(x_values - point)))
+        for array in arrays:
+            for offset in (-1, 0, 1):
+                current = index + offset
+                if 0 <= current < len(array):
+                    array[current] = np.nan
+
+
+def detect_vertical_jumps(x_values, y_values):
+    finite_values = np.abs(y_values[np.isfinite(y_values)])
+    if finite_values.size == 0:
+        return []
+    scale = max(1.0, float(np.median(finite_values)))
+    threshold = max(35.0, 18.0 * scale)
+    candidates = []
+    for idx in range(len(y_values) - 1):
+        y0, y1 = y_values[idx], y_values[idx + 1]
+        if not (math.isfinite(y0) and math.isfinite(y1)):
+            continue
+        if y0 * y1 < 0 and min(abs(y0), abs(y1)) > threshold:
+            candidates.append(float((x_values[idx] + x_values[idx + 1]) / 2.0))
+    return candidates
+
+
+def deduplicate_numbers(values, tolerance=1e-5, max_items=20):
+    values = sorted(value for value in values if value is not None and math.isfinite(value))
+    unique = []
+    for value in values:
+        if not unique or abs(value - unique[-1]) > tolerance * max(1.0, abs(value)):
+            unique.append(value)
+    return unique[:max_items]
+
+
+def asymptotes_for(expr, xmin, xmax, x_values, y_values, protected=False):
+    vertical = []
+    horizontal = []
+    num, den = rational_parts(expr)
+
+    if den != 1 and den.is_polynomial(x):
+        denominator_roots = find_real_solutions(den, xmin, xmax, max_items=20)
+        if denominator_roots != 'infinite':
+            numerator_eval = scalar_evaluator(num)
+            for record in denominator_roots:
+                point = record['num']
+                numerator_value = numerator_eval(point)
+                if numerator_value is not None and abs(numerator_value) > 1e-7:
+                    vertical.append(point)
+
+    for point in finite_singularities_in_range(expr, xmin, xmax, protected=protected):
+        is_vertical = False
+        for direction in ('+', '-'):
+            try:
+                limit_value = sp.limit(expr, x, point, dir=direction)
+                if limit_value in (sp.oo, -sp.oo, sp.zoo) or getattr(limit_value, 'is_infinite', False):
+                    is_vertical = True
+            except Exception:
+                continue
+        if is_vertical:
+            vertical.append(point)
+
+    vertical.extend(detect_vertical_jumps(x_values, y_values))
+
+    # Las asíntotas horizontales racionales se obtienen sin límites simbólicos costosos.
+    if num.is_polynomial(x) and den.is_polynomial(x) and den != 0:
+        try:
+            deg_num = sp.degree(num, x)
+            deg_den = sp.degree(den, x)
+            if deg_num < deg_den:
+                horizontal.append(0.0)
+            elif deg_num == deg_den:
+                ratio = sp.LC(sp.Poly(num, x)) / sp.LC(sp.Poly(den, x))
+                value = safe_float(ratio)
+                if value is not None:
+                    horizontal.append(value)
+        except Exception:
+            pass
+    elif (not protected and sp.count_ops(expr) <= 28 and not any(expr.has(fn) for fn in (sp.sin, sp.cos, sp.tan, sp.sec, sp.csc, sp.cot))):
+        for direction in (sp.oo, -sp.oo):
+            try:
+                limit_value = sp.limit(expr, x, direction)
+                value = safe_float(limit_value)
+                if value is not None:
+                    horizontal.append(value)
+            except Exception:
+                pass
+
+    return deduplicate_numbers(vertical), deduplicate_numbers(horizontal, max_items=4)
+
+
+def break_discontinuity_jumps(values):
+    cleaned = np.array(values, dtype=float, copy=True)
+    finite_values = np.abs(cleaned[np.isfinite(cleaned)])
+    if finite_values.size == 0:
+        return cleaned
+    median = max(1.0, float(np.median(finite_values)))
+    threshold = max(40.0, 20.0 * median)
+    for idx in range(1, len(cleaned)):
+        previous, current = cleaned[idx - 1], cleaned[idx]
+        if not (math.isfinite(previous) and math.isfinite(current)):
+            continue
+        if previous * current < 0 and min(abs(previous), abs(current)) > threshold:
+            cleaned[idx - 1] = np.nan
+            cleaned[idx] = np.nan
+        elif abs(current - previous) > max(1e5, threshold * 1000):
+            cleaned[idx - 1] = np.nan
+            cleaned[idx] = np.nan
+    return cleaned
+
+
+def json_ready_array(values):
+    return [None if not math.isfinite(float(value)) else float(value) for value in values]
+
+
+
+def robust_y_range(*arrays):
+    finite_parts = []
+    for array in arrays:
+        values = np.asarray(array, dtype=float)
+        finite = values[np.isfinite(values)]
+        if finite.size:
+            finite_parts.append(finite)
+    if not finite_parts:
+        return [-10.0, 10.0]
+
+    values = np.concatenate(finite_parts)
+    low, high = np.percentile(values, [2.0, 98.0])
+    if not (math.isfinite(float(low)) and math.isfinite(float(high))):
+        return [-10.0, 10.0]
+    low = float(low)
+    high = float(high)
+    if abs(high - low) < 1e-10:
+        padding = max(1.0, abs(high) * 0.15)
+        return [low - padding, high + padding]
+    padding = 0.10 * (high - low)
+    return [max(-VALUE_LIMIT, low - padding), min(VALUE_LIMIT, high + padding)]
+
+
+def quick_zero_points(x_values, y_values, evaluator=None, max_items=30):
+    finite = np.isfinite(y_values)
+    if not finite.any():
+        return []
+    finite_abs = np.abs(y_values[finite])
+    scale = max(1.0, float(np.median(finite_abs)))
+    residual_limit = max(1e-7, scale * 1e-6)
+    points = []
+
+    def accept(point):
+        point = float(point)
+        if evaluator is not None:
+            residual = evaluator(point)
+            if residual is None or abs(residual) > residual_limit:
+                return
+        points.append(point)
+
+    exact_indices = np.where(finite & (np.abs(y_values) <= max(1e-10, scale * 1e-10)))[0]
+    for index in exact_indices[:max_items]:
+        accept(x_values[index])
+
+    jump_limit = max(30.0, 20.0 * scale)
+    for index in range(len(x_values) - 1):
+        y0, y1 = y_values[index], y_values[index + 1]
+        if not (math.isfinite(y0) and math.isfinite(y1)) or y0 * y1 >= 0:
+            continue
+        if min(abs(y0), abs(y1)) > jump_limit:
+            continue
+        denominator = y1 - y0
+        if abs(denominator) < 1e-16:
+            point = (x_values[index] + x_values[index + 1]) / 2.0
+        else:
+            point = x_values[index] - y0 * (x_values[index + 1] - x_values[index]) / denominator
+        accept(point)
+        if len(points) >= max_items * 2:
+            break
+    return deduplicate_numbers(points, tolerance=2e-5, max_items=max_items)
+
+
+def build_graph_payload(f_original, d1, d2, sample_min, sample_max,
+                        root_points=None, extrema=None, inflection_points=None,
+                        revision=None, protected=False):
+    span = sample_max - sample_min
+    if not math.isfinite(span) or span <= 0 or span > MAX_DYNAMIC_SPAN * 1.7:
+        raise ValueError('La ventana solicitada no es válida para la gráfica.')
+
+    point_count = PROTECTED_GRAPH_POINTS if protected else GRAPH_POINTS
+    x_values = np.linspace(sample_min, sample_max, point_count)
+    y_f_array = evaluate_vector(f_original, x_values)
+    y_d1_array = evaluate_vector(d1, x_values)
+    y_d2_array = evaluate_vector(d2, x_values)
+
+    excluded_points = finite_singularities_in_range(f_original, sample_min, sample_max, protected=protected)
+    mask_near_points(x_values, (y_f_array, y_d1_array, y_d2_array), excluded_points)
+    invalid_f = ~np.isfinite(y_f_array)
+    y_d1_array[invalid_f] = np.nan
+    y_d2_array[invalid_f] = np.nan
+
+    asym_v, asym_h = asymptotes_for(f_original, sample_min, sample_max, x_values, y_f_array, protected=protected)
+    y_f_array = break_discontinuity_jumps(y_f_array)
+    y_d1_array = break_discontinuity_jumps(y_d1_array)
+    y_d2_array = break_discontinuity_jumps(y_d2_array)
+
+    f_eval = scalar_evaluator(f_original)
+    d1_eval = scalar_evaluator(d1)
+    d2_eval = scalar_evaluator(d2)
+
+    if root_points is None:
+        root_x = quick_zero_points(x_values, y_f_array, evaluator=f_eval)
+    else:
+        root_x = [float(value) for value in root_points if sample_min <= value <= sample_max]
+
+    if extrema is None:
+        ext_x, ext_y, ext_labels = [], [], []
+        for point in quick_zero_points(x_values, y_d1_array, evaluator=d1_eval):
+            y_value = f_eval(point)
+            if y_value is None:
+                continue
+            label = classify_critical_point(point, f_eval, d1_eval, d2_eval, sample_min, sample_max)
+            ext_x.append(point)
+            ext_y.append(y_value)
+            ext_labels.append(label)
+    else:
+        ext_x = [float(item[0]) for item in extrema if sample_min <= item[0] <= sample_max]
+        ext_y = [float(item[1]) for item in extrema if sample_min <= item[0] <= sample_max]
+        ext_labels = [item[2] for item in extrema if sample_min <= item[0] <= sample_max]
+
+    if inflection_points is None:
+        inf_x, inf_y = [], []
+        for point in quick_zero_points(x_values, y_d2_array, evaluator=d2_eval):
+            if not confirms_inflection(point, d2_eval, sample_min, sample_max):
+                continue
+            y_value = f_eval(point)
+            if y_value is not None:
+                inf_x.append(point)
+                inf_y.append(y_value)
+    else:
+        inf_x = [float(item[0]) for item in inflection_points if sample_min <= item[0] <= sample_max]
+        inf_y = [float(item[1]) for item in inflection_points if sample_min <= item[0] <= sample_max]
+
+    return {
+        'x': [float(value) for value in x_values],
+        'f': json_ready_array(y_f_array),
+        'df': json_ready_array(y_d1_array),
+        'ddf': json_ready_array(y_d2_array),
+        'root_x': root_x,
+        'root_y': [0.0] * len(root_x),
+        'ext_x': ext_x,
+        'ext_y': ext_y,
+        'ext_labels': ext_labels,
+        'inf_x': inf_x,
+        'inf_y': inf_y,
+        'asym_v': asym_v,
+        'asym_h': asym_h,
+        'sample_min': float(sample_min),
+        'sample_max': float(sample_max),
+        'sample_step': float(span / max(1, point_count - 1)),
+        'y_range': robust_y_range(y_f_array, y_d1_array),
+        'revision': revision,
+        'protected_mode': bool(protected),
+    }
+
+def preview_expression(event):
+    try:
+        expr = parse_expression(document.getElementById('entrada_funcion').value)
+        window.actualizarVistaPrevia(sp.latex(expr), '')
+    except Exception as exc:
+        window.actualizarVistaPrevia('', f'Vista previa no disponible: {str(exc)}')
+
+
+def process_calculation(event):
+    start = time.perf_counter()
+    try:
+        text_input = document.getElementById('entrada_funcion').value
+        f_original = parse_expression(text_input)
+        f_display = light_simplify(f_original)
+        d1_raw = sp.diff(f_original, x)
+        d1 = light_simplify(d1_raw)
+        d2 = light_simplify(sp.diff(d1_raw, x))
+        profile = analysis_profile(f_original, d1, d2)
+        protected = bool(profile['protected'])
+
+        collector = StepCollector()
+        collector.add(
+            'Definición formal de derivada',
+            r'Toda derivada se fundamenta en el límite del cociente incremental: '
+            r'$$f\prime(x)=\lim_{h\to 0}\frac{f(x+h)-f(x)}{h}.$$ '
+            r'Las reglas siguientes condensan este proceso para operar simbólicamente.'
+        )
+        derivar_paso_a_paso(f_original, x, collector)
+        if collector.truncated:
+            collector.items.append((
+                'Resumen del procedimiento',
+                'El desarrollo completo contiene demasiados subpasos. Se limitaron los pasos repetitivos para mantenerlo legible.'
+            ))
+
+        pasos_html = ''.join(
+            f'''<details class="acordeon-paso" {'open' if idx == 2 else ''}>
+                <summary class="paso-titulo"><span>Paso {idx}: {title}</span><span class="flecha-indicadora">▼</span></summary>
+                <div class="paso-contenido">{detail}</div>
+            </details>'''
+            for idx, (title, detail) in enumerate(collector.items, 1)
+        )
+
+        dom_f, dom_d1, dom_d2, common, dominio_html = build_domain_html(f_original, d1, d2, profile=profile)
+        view_min, view_max = automatic_initial_window(f_original, dom_f, profile=profile)
+        view_span = view_max - view_min
+        sample_min = view_min - view_span * GRAPH_BUFFER_RATIO
+        sample_max = view_max + view_span * GRAPH_BUFFER_RATIO
+
+        roots = find_real_solutions(f_original, view_min, view_max, max_items=16 if protected else 30, protected=protected)
+        if sp.count_ops(f_original) <= 90 and f_original.is_rational_function(x):
+            factored = sp.factor(f_original)
+        else:
+            factored = f_display
+        roots_latex = records_to_latex(roots)
+        raices_html = f'''
+        <div class="analysis-copy">
+            <p><strong>Función interpretada:</strong> $$f(x)={sp.latex(f_original)}$$</p>
+            <p class="helper-text">Los decimales finitos se interpretan exactamente como fracciones; por ejemplo, $2.4=\\frac{{12}}{{5}}$. La precedencia depende de los operadores y paréntesis escritos por el usuario.</p>
+            <p><strong>Forma simplificada para lectura:</strong> $$f(x)={sp.latex(f_display)}$$</p>
+            <p><strong>Forma factorizada cuando aplica:</strong> $$f(x)={sp.latex(factored)}$$</p>
+            <p><strong>Raíces localizadas en la ventana inicial automática $[{view_min:.6g},{view_max:.6g}]$:</strong> $${roots_latex}$$</p>
+            <p class="helper-text">Al desplazarte por la gráfica, los marcadores visibles se vuelven a estimar numéricamente en la zona explorada.</p>
+        </div>'''
+
+        critical = find_real_solutions(d1, view_min, view_max, max_items=12 if protected else 30, protected=protected)
+        inflection_candidates = find_real_solutions(d2, view_min, view_max, max_items=12 if protected else 30, protected=protected)
+        f_eval = scalar_evaluator(f_original)
+        d1_eval = scalar_evaluator(d1)
+        d2_eval = scalar_evaluator(d2)
+
+        extrema = []
+        extrema_text = []
+        if critical != 'infinite':
+            for record in critical:
+                point = record['num']
+                y_value = f_eval(point)
+                if y_value is None:
+                    continue
+                label = classify_critical_point(point, f_eval, d1_eval, d2_eval, view_min, view_max)
+                extrema.append((point, y_value, label))
+                extrema_text.append(
+                    f'{label} en $x\\approx {point:.7g}$, con $f(x)\\approx {y_value:.7g}$.'
+                )
+
+        inflection_points = []
+        inflection_text = []
+        if inflection_candidates != 'infinite':
+            for record in inflection_candidates:
+                point = record['num']
+                if not confirms_inflection(point, d2_eval, view_min, view_max):
+                    continue
+                y_value = f_eval(point)
+                if y_value is None:
+                    continue
+                inflection_points.append((point, y_value))
+                inflection_text.append(
+                    f'Punto de inflexión confirmado cerca de $x\\approx {point:.7g}$, con $f(x)\\approx {y_value:.7g}$.'
+                )
+
+        root_records = [] if roots == 'infinite' else roots
+        root_points = [record['num'] for record in root_records]
+        revision = str(time.time_ns())
+        graph_data = build_graph_payload(
+            f_original, d1, d2, sample_min, sample_max,
+            root_points=root_points,
+            extrema=extrema,
+            inflection_points=inflection_points,
+            revision=revision,
+            protected=protected,
+        )
+        graph_data['initial_view_min'] = float(view_min)
+        graph_data['initial_view_max'] = float(view_max)
+
+        interpretation_items = [
+            f'La función fue clasificada como <strong>{classify_function(f_original)}</strong>.',
+        ]
+        if protected:
+            interpretation_items.append(
+                '<strong>Modo protegido:</strong> se omitieron dominios exactos, límites simbólicos y refinamientos con nsolve para mantener la página operativa.'
+            )
+        interpretation_items.extend(
+            extrema_text or ['No se confirmaron extremos locales dentro de la ventana inicial automática.']
+        )
+        interpretation_items.extend(
+            inflection_text or ['No se confirmaron cambios de concavidad dentro de la ventana inicial automática.']
+        )
+        if graph_data['asym_v']:
+            interpretation_items.append(
+                'Asíntotas verticales o discontinuidades verticales visibles: '
+                + ', '.join(f'$x\\approx {value:.6g}$' for value in graph_data['asym_v']) + '.'
+            )
+        if graph_data['asym_h']:
+            interpretation_items.append(
+                'Asíntotas horizontales detectadas: '
+                + ', '.join(f'$y={value:.6g}$' for value in graph_data['asym_h']) + '.'
+            )
+        interpretation_items.append(
+            r'La recta tangente usa $y=f(a)+f\prime(a)(x-a)$ y solo se muestra cuando $f(a)$ y $f\prime(a)$ son finitos.'
+        )
+        interpretation_items.append(
+            'La ventana gráfica es navegable: al acercar o desplazar, el motor vuelve a muestrear la zona visible.'
+        )
+        interpretacion_html = (
+            '<div class="analysis-copy"><ul class="analysis-list">'
+            + ''.join(f'<li>{item}</li>' for item in interpretation_items)
+            + '</ul></div>'
+        )
+
+        CURRENT_ANALYSIS.clear()
+        CURRENT_ANALYSIS.update({
+            'f': f_original,
+            'd1': d1,
+            'd2': d2,
+            'revision': revision,
+            'initial_view_min': float(view_min),
+            'initial_view_max': float(view_max),
+            'protected': protected,
+        })
+
+        elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+        roots_text = 'Infinitas' if roots == 'infinite' else f'{len(root_records)} visibles'
+        metadata = {
+            'tipo': classify_function(f_original) + (' · modo protegido' if protected else ''),
+            'dominio_texto': 'Evaluación numérica protegida' if protected else format_set_for_metadata(dom_f),
+            'raices_texto': roots_text,
+            'tiempo_ms': elapsed_ms,
+        }
+
+        window.actualizarResultadosFormales(
+            sp.latex(d1),
+            sp.latex(d2),
+            pasos_html,
+            dominio_html,
+            raices_html,
+            interpretacion_html,
+            json.dumps(metadata, allow_nan=False),
+            json.dumps(graph_data, allow_nan=False),
+        )
+    except Exception as exc:
+        window.mostrarErrorCalculo(str(exc))
+
+
+def update_graph_range(event):
+    try:
+        if not CURRENT_ANALYSIS:
+            raise ValueError('Primero realiza un cálculo completo.')
+        sample_min = float(document.getElementById('grafica_rango_min').value)
+        sample_max = float(document.getElementById('grafica_rango_max').value)
+        request_id = document.getElementById('grafica_request_id').value
+        span = sample_max - sample_min
+        if not math.isfinite(sample_min) or not math.isfinite(sample_max) or span <= 0:
+            raise ValueError('La nueva ventana gráfica no es válida.')
+        if span > MAX_DYNAMIC_SPAN * 1.7:
+            raise ValueError('La ventana gráfica solicitada es demasiado amplia.')
+
+        payload = build_graph_payload(
+            CURRENT_ANALYSIS['f'],
+            CURRENT_ANALYSIS['d1'],
+            CURRENT_ANALYSIS['d2'],
+            sample_min,
+            sample_max,
+            revision=CURRENT_ANALYSIS['revision'],
+            protected=bool(CURRENT_ANALYSIS.get('protected')),
+        )
+        payload['initial_view_min'] = CURRENT_ANALYSIS['initial_view_min']
+        payload['initial_view_max'] = CURRENT_ANALYSIS['initial_view_max']
+        window.actualizarRangoGrafica(
+            json.dumps(payload, allow_nan=False),
+            request_id,
+        )
+    except Exception as exc:
+        window.mostrarErrorRangoGrafica(str(exc))
+
+document.getElementById('btn_python_trigger').onclick = process_calculation
+document.getElementById('btn_preview_trigger').onclick = preview_expression
+document.getElementById('btn_graph_range_trigger').onclick = update_graph_range
+
+button = document.getElementById('boton_calcular')
+button.innerText = 'Calcular análisis'
+button.disabled = False
+window.motorListo = True
+preview_expression(None)
+
+</script>
+</body>
+</html>
